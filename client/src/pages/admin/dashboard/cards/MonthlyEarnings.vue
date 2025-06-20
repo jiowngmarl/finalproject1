@@ -1,7 +1,9 @@
 <template>
   <VaCard>
     <VaCardTitle>
-      <h1 class="card-title text-tag text-secondary font-bold uppercase">Monthly Earnings</h1>
+      <h1 class="card-title text-tag text-secondary font-bold uppercase">
+        Monthly Earnings
+      </h1>
     </VaCardTitle>
     <VaCardContent>
       <div class="p-1 bg-black rounded absolute right-4 top-4">
@@ -16,22 +18,27 @@
         </p>
       </section>
       <div class="w-full flex items-center">
-        <VaChart :data="chartData" class="h-24" type="line" :options="options" />
+        <VaChart
+          :data="chartData"
+          class="h-24"
+          type="line"
+          :options="options"
+        />
       </div>
     </VaCardContent>
   </VaCard>
 </template>
 
 <script setup lang="ts">
-import { VaCard } from 'vuestic-ui'
-import VaChart from '../../../../components/va-charts/VaChart.vue'
-import { useChartData } from '../../../../data/charts/composables/useChartData'
-import { lineChartData } from '../../../../data/charts/lineChartData'
-import { ChartOptions } from 'chart.js'
+import { VaCard } from "vuestic-ui";
+import VaChart from "../../../../components/va-charts/VaChart.vue";
+import { useChartData } from "../../../../data/charts/composables/useChartData";
+import { lineChartData } from "../../../../data/charts/lineChartData";
+import { ChartOptions } from "chart.js";
 
-const chartData = useChartData(lineChartData)
+const chartData = useChartData(lineChartData);
 
-const options: ChartOptions<'line'> = {
+const options: ChartOptions<"line"> = {
   scales: {
     x: {
       display: false,
@@ -51,7 +58,7 @@ const options: ChartOptions<'line'> = {
   },
   interaction: {
     intersect: false,
-    mode: 'index',
+    mode: "index",
   },
   plugins: {
     legend: {
@@ -61,5 +68,5 @@ const options: ChartOptions<'line'> = {
       enabled: true,
     },
   },
-}
+};
 </script>

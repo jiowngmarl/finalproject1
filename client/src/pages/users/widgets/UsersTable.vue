@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { defineVaDataTableColumns, useModal } from 'vuestic-ui'
-import { User, UserRole } from '../types'
-import UserAvatar from './UserAvatar.vue'
-import { PropType, computed, toRef } from 'vue'
-import { Pagination, Sorting } from '../../../data/pages/users'
-import { useVModel } from '@vueuse/core'
-import { Project } from '../../projects/types'
+import { defineVaDataTableColumns, useModal } from "vuestic-ui";
+import { User, UserRole } from "../types";
+import UserAvatar from "./UserAvatar.vue";
+import { PropType, computed, toRef } from "vue";
+import { Pagination, Sorting } from "../../../data/pages/users";
+import { useVModel } from "@vueuse/core";
+import { Project } from "../../projects/types";
 
 const columns = defineVaDataTableColumns([
-  { label: 'Full Name', key: 'fullname', sortable: true },
-  { label: 'Email', key: 'email', sortable: true },
-  { label: 'Username', key: 'username', sortable: true },
-  { label: 'Role', key: 'role', sortable: true },
-  { label: 'Projects', key: 'projects', sortable: true },
-  { label: ' ', key: 'actions', align: 'right' },
-])
+  { label: "Full Name", key: "fullname", sortable: true },
+  { label: "Email", key: "email", sortable: true },
+  { label: "Username", key: "username", sortable: true },
+  { label: "Role", key: "role", sortable: true },
+  { label: "Projects", key: "projects", sortable: true },
+  { label: " ", key: "actions", align: "right" },
+]);
 
 const props = defineProps({
   users: {
@@ -27,71 +27,76 @@ const props = defineProps({
   },
   loading: { type: Boolean, default: false },
   pagination: { type: Object as PropType<Pagination>, required: true },
-  sortBy: { type: String as PropType<Sorting['sortBy']>, required: true },
-  sortingOrder: { type: String as PropType<Sorting['sortingOrder']>, default: null },
-})
+  sortBy: { type: String as PropType<Sorting["sortBy"]>, required: true },
+  sortingOrder: {
+    type: String as PropType<Sorting["sortingOrder"]>,
+    default: null,
+  },
+});
 
 const emit = defineEmits<{
-  (event: 'edit-user', user: User): void
-  (event: 'delete-user', user: User): void
-  (event: 'update:sortBy', sortBy: Sorting['sortBy']): void
-  (event: 'update:sortingOrder', sortingOrder: Sorting['sortingOrder']): void
-}>()
+  (event: "edit-user", user: User): void;
+  (event: "delete-user", user: User): void;
+  (event: "update:sortBy", sortBy: Sorting["sortBy"]): void;
+  (event: "update:sortingOrder", sortingOrder: Sorting["sortingOrder"]): void;
+}>();
 
-const users = toRef(props, 'users')
-const sortByVModel = useVModel(props, 'sortBy', emit)
-const sortingOrderVModel = useVModel(props, 'sortingOrder', emit)
+const users = toRef(props, "users");
+const sortByVModel = useVModel(props, "sortBy", emit);
+const sortingOrderVModel = useVModel(props, "sortingOrder", emit);
 
 const roleColors: Record<UserRole, string> = {
-  admin: 'danger',
-  user: 'background-element',
-  owner: 'warning',
-}
+  admin: "danger",
+  user: "background-element",
+  owner: "warning",
+};
 
-const totalPages = computed(() => Math.ceil(props.pagination.total / props.pagination.perPage))
+const totalPages = computed(() =>
+  Math.ceil(props.pagination.total / props.pagination.perPage),
+);
 
-const { confirm } = useModal()
+const { confirm } = useModal();
 
 const onUserDelete = async (user: User) => {
   const agreed = await confirm({
-    title: 'Delete user',
+    title: "Delete user",
     message: `Are you sure you want to delete ${user.fullname}?`,
-    okText: 'Delete',
-    cancelText: 'Cancel',
-    size: 'small',
-    maxWidth: '380px',
-  })
+    okText: "Delete",
+    cancelText: "Cancel",
+    size: "small",
+    maxWidth: "380px",
+  });
 
   if (agreed) {
-    emit('delete-user', user)
+    emit("delete-user", user);
   }
-}
+};
 
-const formatProjectNames = (projects: Project['id'][]) => {
+const formatProjectNames = (projects: Project["id"][]) => {
   const names = projects.reduce((acc, p) => {
-    const project = props.projects?.find(({ id }) => p === id)
+    const project = props.projects?.find(({ id }) => p === id);
 
     if (project) {
-      acc.push(project.project_name)
+      acc.push(project.project_name);
     }
 
-    return acc
-  }, [] as string[])
-  if (names.length === 0) return 'No projects'
+    return acc;
+  }, [] as string[]);
+  if (names.length === 0) return "No projects";
   if (names.length <= 2) {
-    return names.map((name) => name).join(', ')
+    return names.map((name) => name).join(", ");
   }
 
   return (
     names
       .slice(0, 2)
       .map((name) => name)
-      .join(', ') +
-    ' + ' +
+      .join(", ") +
+    " + " +
     (names.length - 2) +
-    ' more'
-  )
-}
+    " more"
+  );
+};
 </script>
 
 <template>
@@ -122,7 +127,10 @@ const formatProjectNames = (projects: Project['id'][]) => {
     </template>
 
     <template #cell(role)="{ rowData }">
-      <VaBadge :text="rowData.role" :color="roleColors[rowData.role as UserRole]" />
+      <VaBadge
+        :text="rowData.role"
+        :color="roleColors[rowData.role as UserRole]"
+      />
     </template>
 
     <template #cell(projects)="{ rowData }">
@@ -152,11 +160,17 @@ const formatProjectNames = (projects: Project['id'][]) => {
     </template>
   </VaDataTable>
 
-  <div class="flex flex-col-reverse md:flex-row gap-2 justify-between items-center py-2">
+  <div
+    class="flex flex-col-reverse md:flex-row gap-2 justify-between items-center py-2"
+  >
     <div>
       <b>{{ $props.pagination.total }} results.</b>
       Results per page
-      <VaSelect v-model="$props.pagination.perPage" class="!w-20" :options="[10, 50, 100]" />
+      <VaSelect
+        v-model="$props.pagination.perPage"
+        class="!w-20"
+        :options="[10, 50, 100]"
+      />
     </div>
 
     <div v-if="totalPages > 1" class="flex">

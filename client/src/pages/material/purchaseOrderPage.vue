@@ -1,18 +1,19 @@
 <template>
   <div class="mrp-page">
-
     <!-- 생산계획 테이블 -->
     <div class="table-section">
       <h3 class="table-title">발주 요청 자재</h3>
       <va-data-table
+        v-model:current-page="page"
         :items="orderList"
         :columns="orderColumns"
         :per-page="5"
-        :current-page.sync="page"
         track-by="purchase_order_id"
       >
         <template #cell(action)="{ row }">
-          <va-button size="small" @click="onSelectMt(row.source)">선택</va-button>
+          <va-button size="small" @click="onSelectMt(row.source)">
+            선택
+          </va-button>
         </template>
       </va-data-table>
 
@@ -31,21 +32,24 @@
         :items="shortageList"
         :columns="shortageColumns"
         track-by="purchase_order_id"
+        class="input-compact"
       >
-      <template #cell(select)="{ row }">
-        <va-checkbox
-          :model-value="selectedRows.includes(row.source.purchase_order_id)"
-          @update:modelValue="(checked) => {
-            const id = row.source.purchase_order_id
-            if (checked) {
-              selectedRows.push(id)
-            } else {
-              selectedRows.splice(selectedRows.indexOf(id), 1)
-            }
-          }"
-        />
-      </template>
-            <!-- 날짜 포맷 -->
+        <template #cell(select)="{ row }">
+          <va-checkbox
+            :model-value="selectedRows.includes(row.source.purchase_order_id)"
+            @update:model-value="
+              (checked) => {
+                const id = row.source.purchase_order_id;
+                if (checked) {
+                  selectedRows.push(id);
+                } else {
+                  selectedRows.splice(selectedRows.indexOf(id), 1);
+                }
+              }
+            "
+          />
+        </template>
+        <!-- 날짜 포맷 -->
         <template #cell(purchase_order_date)="{ row }">
           {{ formatDateForView(row.source.purchase_order_date) }}
         </template>
@@ -56,7 +60,7 @@
             v-model="shortageList[rowIndex].due_date"
             placeholder="납기일"
             :clearable="false"
-            style="width: 130px; min-width: 0;"
+            style="width: 130px; min-width: 0"
           />
         </template>
 
@@ -90,140 +94,140 @@
             class="input-compact"
           />
         </template>
-      </va-data-table class="input-compact">
+      </va-data-table>
       <div class="button-wrap">
-        <va-button @click="onRegisterOrder">등록</va-button>
+        <va-button @click="onRegisterOrder"> 등록 </va-button>
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import axios from 'axios'
-import { ref, onMounted } from 'vue'
+import axios from "axios";
+import { ref, onMounted } from "vue";
 
 interface PurchaseOrder {
-  purchase_order_id: string
-  material_code: string
-  material_name: string
-  material_unit: string
-  material_cls: string
-  purchase_order_quantity: string
+  purchase_order_id: string;
+  material_code: string;
+  material_name: string;
+  material_unit: string;
+  material_cls: string;
+  purchase_order_quantity: string;
 }
 
 interface Shortage {
-  purchase_order_id: string
-  purchase_order_name: string
-  material_code: string
-  material_name: string
-  purchase_order_quantity: number
-  purchase_order_date: string
-  material_unit: string
+  purchase_order_id: string;
+  purchase_order_name: string;
+  material_code: string;
+  material_name: string;
+  purchase_order_quantity: number;
+  purchase_order_date: string;
+  material_unit: string;
   due_date: string | Date | null;
-  account_id: string
-  account_name: string
-  name: string
+  account_id: string;
+  account_name: string;
+  name: string;
 }
 
 interface Account {
-  account_id: string
-  account_name: string
+  account_id: string;
+  account_name: string;
 }
 
-const accountList = ref<Account[]>([])
-const orderList = ref<PurchaseOrder[]>([])
-const shortageList = ref<Shortage[]>([])
-const selectedPlan = ref<PurchaseOrder | null>(null)
-const page = ref(1)
-const selectedRows = ref<string[]>([])
+const accountList = ref<Account[]>([]);
+const orderList = ref<PurchaseOrder[]>([]);
+const shortageList = ref<Shortage[]>([]);
+const selectedPlan = ref<PurchaseOrder | null>(null);
+const page = ref(1);
+const selectedRows = ref<string[]>([]);
 
 const orderColumns = [
-  { key: 'material_code', label: '자재코드' },
-  { key: 'material_name', label: '자재명' },
-  { key: 'material_safty', label: '안전재고' },
-  { key: 'material_unit', label: '단위' },
-  { key: 'material_cls', label: '분류' },
-  { key: 'purchase_order_quantity', label: '발주수량' },
-  { key: 'action', label: '선택' }
-]
+  { key: "material_code", label: "자재코드" },
+  { key: "material_name", label: "자재명" },
+  { key: "material_safty", label: "안전재고" },
+  { key: "material_unit", label: "단위" },
+  { key: "material_cls", label: "분류" },
+  { key: "purchase_order_quantity", label: "발주수량" },
+  { key: "action", label: "선택" },
+];
 
 const shortageColumns = [
-  { key: 'select', label: '선택' },
-  { key: 'purchase_order_name', label: '발주명' },
-  { key: 'material_code', label: '자재코드' },
-  { key: 'material_name', label: '자재명' },
-  { key: 'purchase_order_quantity', label: '요청수량' },
-  { key: 'purchase_order_date', label: '발주 요청일' },
-  { key: 'material_unit', label: '단위' },
-  { key: 'due_date', label: '납기일' },
-  { key: 'account_id', label: '거래처코드' },
-  { key: 'account_name', label: '거래처 명' },
-  { key: 'name', label: '담당자' },
-]
+  { key: "select", label: "선택" },
+  { key: "purchase_order_name", label: "발주명" },
+  { key: "material_code", label: "자재코드" },
+  { key: "material_name", label: "자재명" },
+  { key: "purchase_order_quantity", label: "요청수량" },
+  { key: "purchase_order_date", label: "발주 요청일" },
+  { key: "material_unit", label: "단위" },
+  { key: "due_date", label: "납기일" },
+  { key: "account_id", label: "거래처코드" },
+  { key: "account_name", label: "거래처 명" },
+  { key: "name", label: "담당자" },
+];
 
 const formatDateForView = (date: Date | string | null | undefined): string => {
-  if (!date) return ''
-  const d = typeof date === 'string' ? new Date(date) : date
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
-}
+  if (!date) return "";
+  const d = typeof date === "string" ? new Date(date) : date;
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+};
 
 const fetchPlans = async () => {
   try {
-    const res = await axios.get('/purchase')
-    orderList.value = Array.isArray(res.data) ? res.data : []
+    const res = await axios.get("/purchase");
+    orderList.value = Array.isArray(res.data) ? res.data : [];
   } catch (err) {
-    console.error('계획 조회 실패', err)
-    orderList.value = [] // 실패 시에도 빈 배열로 초기화
+    console.error("계획 조회 실패", err);
+    orderList.value = []; // 실패 시에도 빈 배열로 초기화
   }
-}
+};
 
 const fetchOrder = async () => {
   try {
-    const res = await axios.get('/purchaseIn')
-    shortageList.value = Array.isArray(res.data) ? res.data : []
+    const res = await axios.get("/purchaseIn");
+    shortageList.value = Array.isArray(res.data) ? res.data : [];
   } catch (err) {
-    console.error('계획 조회 실패', err)
-    orderList.value = [] // 실패 시에도 빈 배열로 초기화
+    console.error("계획 조회 실패", err);
+    orderList.value = []; // 실패 시에도 빈 배열로 초기화
   }
-}
+};
 
 const fetchAccounts = async () => {
   try {
-    const res = await axios.get('/account') // 예: 거래처 API
-    accountList.value = res.data
+    const res = await axios.get("/account"); // 예: 거래처 API
+    accountList.value = res.data;
   } catch (err) {
-    console.error('거래처 목록 불러오기 실패', err)
+    console.error("거래처 목록 불러오기 실패", err);
   }
-}
+};
 
 const onSelectMt = async (order: PurchaseOrder) => {
   try {
-    selectedPlan.value = order
-    await axios.put(`/purchase/${order.purchase_order_id}`)
-    await fetchPlans()
-    await fetchOrder()
+    selectedPlan.value = order;
+    await axios.put(`/purchase/${order.purchase_order_id}`);
+    await fetchPlans();
+    await fetchOrder();
   } catch (err) {
-    console.error('MRP 계산 실패', err)
+    console.error("MRP 계산 실패", err);
   }
-}
+};
 
 const onRegisterOrder = async () => {
   if (selectedRows.value.length === 0) {
-    alert('선택된 항목이 없습니다.')
-    return
+    alert("선택된 항목이 없습니다.");
+    return;
   }
 
-  const selectedItems = shortageList.value.filter(item =>
-    selectedRows.value.includes(item.purchase_order_id)
-  )
+  const selectedItems = shortageList.value.filter((item) =>
+    selectedRows.value.includes(item.purchase_order_id),
+  );
 
   // 예: 서버 전송용 변환
-  const payload = selectedItems.map(item => ({
+  const payload = selectedItems.map((item) => ({
     purchase_order_id: item.purchase_order_id,
     due_date: formatDateForView(item.due_date),
     account_id: item.account_id,
     name: item.name,
-  }))
+  }));
 
   try {
     for (const item of payload) {
@@ -233,37 +237,36 @@ const onRegisterOrder = async () => {
       }
     }
 
-    alert('발주 등록 완료!');
+    alert("발주 등록 완료!");
     selectedRows.value = [];
     fetchOrder();
   } catch (err) {
-    console.error('발주 등록 실패:', err);
-    alert('서버 오류 발생');
+    console.error("발주 등록 실패:", err);
+    alert("서버 오류 발생");
   }
-}
+};
 
 const onAccountIdInput = (index: number) => {
   const code = String(shortageList.value[index].account_id);
-  const matched = accountList.value.find(a => String(a.account_id) === code);
+  const matched = accountList.value.find((a) => String(a.account_id) === code);
   if (matched) {
-    shortageList.value[index].account_name = matched.account_name
+    shortageList.value[index].account_name = matched.account_name;
   }
-}
+};
 
 const onAccountNameInput = (index: number) => {
-  const name = shortageList.value[index].account_name
-  const matched = accountList.value.find(a => a.account_name === name)
+  const name = shortageList.value[index].account_name;
+  const matched = accountList.value.find((a) => a.account_name === name);
   if (matched) {
-    shortageList.value[index].account_id = matched.account_id
+    shortageList.value[index].account_id = matched.account_id;
   }
-}
-
+};
 
 onMounted(() => {
-  fetchPlans()
-  fetchOrder()
-  fetchAccounts()
-})
+  fetchPlans();
+  fetchOrder();
+  fetchAccounts();
+});
 </script>
 
 <style scoped>
@@ -297,5 +300,4 @@ onMounted(() => {
 .input-compact {
   width: 120px;
 }
-
 </style>

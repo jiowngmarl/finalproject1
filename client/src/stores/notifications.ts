@@ -1,54 +1,54 @@
-import { defineStore } from 'pinia'
+import { defineStore } from "pinia";
 
-export const useNotificationsStore = defineStore('notifications', {
+export const useNotificationsStore = defineStore("notifications", {
   state: () => {
     return {
       notifications: {
         searchingForAJob: {
-          name: 'Searching for a job',
+          name: "Searching for a job",
           isEnabled: true,
         },
         hiringSomeone: {
-          name: 'Hiring someone',
+          name: "Hiring someone",
           isEnabled: false,
         },
         connectingWithOthers: {
-          name: 'Connecting with others',
+          name: "Connecting with others",
           isEnabled: true,
         },
         postingAndCommenting: {
-          name: 'Posting and commenting',
+          name: "Posting and commenting",
           isEnabled: true,
         },
         messaging: {
-          name: 'Messaging',
+          name: "Messaging",
           isEnabled: true,
         },
         groups: {
-          name: 'Groups',
+          name: "Groups",
           isEnabled: false,
         },
         pages: {
-          name: 'Pages',
+          name: "Pages",
           isEnabled: true,
         },
         attendingEvents: {
-          name: 'Attending events',
+          name: "Attending events",
           isEnabled: true,
         },
         newsAndReports: {
-          name: 'News and reports',
+          name: "News and reports",
           isEnabled: false,
         },
         updatingYourProfile: {
-          name: 'Updating your profile',
+          name: "Updating your profile",
           isEnabled: true,
         },
         verifications: {
-          name: 'Verifications',
+          name: "Verifications",
           isEnabled: true,
         },
       },
-    }
+    };
   },
-})
+});

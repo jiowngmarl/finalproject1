@@ -39,7 +39,7 @@
           />
         </div>
         <div class="flex justify-end gap-2 mt-4">
-          <VaButton color="secondary" @click="resetSearch">초기화</VaButton>
+          <VaButton color="secondary" @click="resetSearch"> 초기화 </VaButton>
         </div>
       </VaCardContent>
     </VaCard>
@@ -48,10 +48,12 @@
     <VaCard>
       <VaCardContent>
         <div class="flex justify-between items-center mb-4">
-          <h2 class="va-h5">설비 목록 (총 {{ filteredEquipments.length }}개)</h2>
+          <h2 class="va-h5">
+            설비 목록 (총 {{ filteredEquipments.length }}개)
+          </h2>
           <div class="flex gap-2">
-            <VaButton color="warning" @click="handleEdit">수정</VaButton>
-            <VaButton color="danger" @click="handleDelete">삭제</VaButton>
+            <VaButton color="warning" @click="handleEdit"> 수정 </VaButton>
+            <VaButton color="danger" @click="handleDelete"> 삭제 </VaButton>
           </div>
         </div>
 
@@ -66,7 +68,11 @@
           hoverable
         >
           <template #cell(eq_group_name)="{ rowData }">
-            <VaChip :color="getCategoryColor(rowData.eq_group_code)" size="small" flat>
+            <VaChip
+              :color="getCategoryColor(rowData.eq_group_code)"
+              size="small"
+              flat
+            >
               {{ rowData.eq_group_name || rowData.eq_group_code }}
             </VaChip>
           </template>
@@ -74,7 +80,11 @@
             <span class="text-sm">{{ getLocationText(rowData) }}</span>
           </template>
           <template #cell(eq_run_name)="{ rowData }">
-            <VaChip :color="getStatusColor(rowData.eq_run_code)" size="small" flat>
+            <VaChip
+              :color="getStatusColor(rowData.eq_run_code)"
+              size="small"
+              flat
+            >
               {{ rowData.eq_run_name || rowData.eq_run_code }}
             </VaChip>
           </template>
@@ -85,148 +95,166 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import axios from 'axios'
-import { useAuthStore } from '@/stores/authStore'
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import axios from "axios";
+import { useAuthStore } from "@/stores/authStore";
 
-const authStore = useAuthStore()
+const authStore = useAuthStore();
 
-console.log('✅ auth_type 값은:', authStore.user?.auth_type)
+console.log("✅ auth_type 값은:", authStore.user?.auth_type);
 
 interface Equipment {
-  eq_id: string
-  eq_name: string
-  eq_group_code: string
-  eq_group_name?: string
-  eq_run_code: string
-  eq_run_name?: string
-  factory_name?: string
-  floor_name?: string
-  room_name?: string
+  eq_id: string;
+  eq_name: string;
+  eq_group_code: string;
+  eq_group_name?: string;
+  eq_run_code: string;
+  eq_run_name?: string;
+  factory_name?: string;
+  floor_name?: string;
+  room_name?: string;
 }
 
 interface CodeOption {
-  label: string
-  value: string
+  label: string;
+  value: string;
 }
 
-const router = useRouter()
-const equipments = ref<Equipment[]>([])
-const selectedRows = ref<Equipment[]>([])
+const router = useRouter();
+const equipments = ref<Equipment[]>([]);
+const selectedRows = ref<Equipment[]>([]);
 
 const searchParams = ref({
-  equipmentCode: '',
-  equipmentName: '',
-  category: '',
-  status: ''
-})
+  equipmentCode: "",
+  equipmentName: "",
+  category: "",
+  status: "",
+});
 
-const categoryOptions = ref<CodeOption[]>([])
-const statusOptions = ref<CodeOption[]>([])
+const categoryOptions = ref<CodeOption[]>([]);
+const statusOptions = ref<CodeOption[]>([]);
 
 const columns = [
-  { key: 'eq_id', label: '설비 번호', sortable: true },
-  { key: 'eq_name', label: '설비명', sortable: true },
-  { key: 'eq_group_name', label: '분류', sortable: true },
-  { key: 'location', label: '위치', sortable: true },
-  { key: 'eq_run_name', label: '설비상태', sortable: true }
-]
+  { key: "eq_id", label: "설비 번호", sortable: true },
+  { key: "eq_name", label: "설비명", sortable: true },
+  { key: "eq_group_name", label: "분류", sortable: true },
+  { key: "location", label: "위치", sortable: true },
+  { key: "eq_run_name", label: "설비상태", sortable: true },
+];
 
 const filteredEquipments = computed(() =>
-  equipments.value.filter(eq => {
-    const matchCode = !searchParams.value.equipmentCode || eq.eq_id.toLowerCase().includes(searchParams.value.equipmentCode.toLowerCase())
-    const matchName = !searchParams.value.equipmentName || eq.eq_name.toLowerCase().includes(searchParams.value.equipmentName.toLowerCase())
-    const matchCategory = !searchParams.value.category || eq.eq_group_code === searchParams.value.category
-    const matchStatus = !searchParams.value.status || eq.eq_run_code === searchParams.value.status
-    return matchCode && matchName && matchCategory && matchStatus
-  })
-)
+  equipments.value.filter((eq) => {
+    const matchCode =
+      !searchParams.value.equipmentCode ||
+      eq.eq_id
+        .toLowerCase()
+        .includes(searchParams.value.equipmentCode.toLowerCase());
+    const matchName =
+      !searchParams.value.equipmentName ||
+      eq.eq_name
+        .toLowerCase()
+        .includes(searchParams.value.equipmentName.toLowerCase());
+    const matchCategory =
+      !searchParams.value.category ||
+      eq.eq_group_code === searchParams.value.category;
+    const matchStatus =
+      !searchParams.value.status ||
+      eq.eq_run_code === searchParams.value.status;
+    return matchCode && matchName && matchCategory && matchStatus;
+  }),
+);
 
 const resetSearch = async () => {
   searchParams.value = {
-    equipmentCode: '',
-    equipmentName: '',
-    category: '',
-    status: ''
-  }
-  selectedRows.value = []
-  await loadEquipments()
-}
+    equipmentCode: "",
+    equipmentName: "",
+    category: "",
+    status: "",
+  };
+  selectedRows.value = [];
+  await loadEquipments();
+};
 
 // 설비 관리 페이지의 handleEdit 함수
 const handleEdit = async () => {
-    if (authStore.user?.department_code !== '04') {
-    alert('설비팀만 수정할 수 있습니다.')
-    return
+  if (authStore.user?.department_code !== "04") {
+    alert("설비팀만 수정할 수 있습니다.");
+    return;
   }
 
   if (selectedRows.value.length !== 1) {
-    alert('수정할 설비 1개를 선택해주세요.')
-    return
+    alert("수정할 설비 1개를 선택해주세요.");
+    return;
   }
 
-  const id = selectedRows.value[0].eq_id
-  console.log('🔗 수정 버튼 클릭. 이동할 ID:', id) // 이 로그 추가
-  
+  const id = selectedRows.value[0].eq_id;
+  console.log("🔗 수정 버튼 클릭. 이동할 ID:", id); // 이 로그 추가
+
   router.push({
-    path: '/faq/equipment-register',
+    path: "/faq/equipment-register",
     query: {
-      mode: 'edit',
-      eq_id: id  // 이 값이 제대로 설정되는지 확인
-    }
-  })
-}
+      mode: "edit",
+      eq_id: id, // 이 값이 제대로 설정되는지 확인
+    },
+  });
+};
 
 const handleDelete = async () => {
-   if (authStore.user?.department_code !== '04') {
-    alert('설비팀만 삭제할 수 있습니다.')
-    return
+  if (authStore.user?.department_code !== "04") {
+    alert("설비팀만 삭제할 수 있습니다.");
+    return;
   }
 
   if (selectedRows.value.length === 0) {
-    alert('삭제할 설비를 선택해주세요.')
-    return
+    alert("삭제할 설비를 선택해주세요.");
+    return;
   }
-  const confirmed = confirm(`${selectedRows.value.length}개 설비를 삭제하시겠습니까?`)
-  if (!confirmed) return
+  const confirmed = confirm(
+    `${selectedRows.value.length}개 설비를 삭제하시겠습니까?`,
+  );
+  if (!confirmed) return;
 
-  const ids = selectedRows.value.map(eq => eq.eq_id)
+  const ids = selectedRows.value.map((eq) => eq.eq_id);
   try {
-    await axios.post('/equipments/delete', { eq_ids: ids })
-    alert('삭제되었습니다.')
-    await loadEquipments()
-    selectedRows.value = []
+    await axios.post("/equipments/delete", { eq_ids: ids });
+    alert("삭제되었습니다.");
+    await loadEquipments();
+    selectedRows.value = [];
   } catch (err) {
-    console.error(err)
-    alert('삭제 실패')
+    console.error(err);
+    alert("삭제 실패");
   }
-}
+};
 
 const loadCommonCodes = async () => {
-  const res = await axios.get('/common-codes?groups=0E,0S')
-  categoryOptions.value = res.data['0E'] || []
-  statusOptions.value = res.data['0S'] || []
-}
+  const res = await axios.get("/common-codes?groups=0E,0S");
+  categoryOptions.value = res.data["0E"] || [];
+  statusOptions.value = res.data["0S"] || [];
+};
 
 const loadEquipments = async () => {
-  const res = await axios.get('/equipments')
+  const res = await axios.get("/equipments");
   if (res.data.isSuccessed) {
     equipments.value = res.data.data.map((eq: any) => ({
       ...eq,
-      eq_id: eq.eq_id?.toString()
-    }))
+      eq_id: eq.eq_id?.toString(),
+    }));
   }
-}
+};
 
-const getCategoryColor = (code: string) => ({ e1: 'primary', e2: 'success', e3: 'warning' }[code] || 'secondary')
-const getStatusColor = (code: string) => ({ s1: 'success', s2: 'info', s3: 'danger' }[code] || 'secondary')
-const getLocationText = (eq: Equipment) => [eq.factory_name, eq.floor_name, eq.room_name].filter(Boolean).join(' > ') || '-'
+const getCategoryColor = (code: string) =>
+  ({ e1: "primary", e2: "success", e3: "warning" })[code] || "secondary";
+const getStatusColor = (code: string) =>
+  ({ s1: "success", s2: "info", s3: "danger" })[code] || "secondary";
+const getLocationText = (eq: Equipment) =>
+  [eq.factory_name, eq.floor_name, eq.room_name].filter(Boolean).join(" > ") ||
+  "-";
 
 onMounted(() => {
-  loadEquipments()
-  loadCommonCodes()
-})
+  loadEquipments();
+  loadCommonCodes();
+});
 </script>
 
 <style scoped>

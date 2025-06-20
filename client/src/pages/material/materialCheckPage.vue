@@ -5,15 +5,22 @@
       <h3 class="section-title">자재 조회</h3>
       <div class="search-form">
         <va-input v-model="filters.material_code" label="자재코드" />
-        <va-date-input v-model="filters.expiry_date" label="유통기한" :manual-input="false" :clearable="true" />
+        <va-date-input
+          v-model="filters.expiry_date"
+          label="유통기한"
+          :manual-input="false"
+          :clearable="true"
+        />
         <va-input v-model="filters.material_name" label="자재명" />
         <va-input v-model="filters.material_unit" label="단위" />
         <va-input v-model="filters.material_cls" label="분류" />
-        <va-input v-model="filters.material_stand" label="규격"/>
+        <va-input v-model="filters.material_stand" label="규격" />
 
         <div class="button-group">
-          <va-button @click="searchOrders">조회</va-button>
-          <va-button color="secondary" @click="resetFilters">초기화</va-button>
+          <va-button @click="searchOrders"> 조회 </va-button>
+          <va-button color="secondary" @click="resetFilters">
+            초기화
+          </va-button>
         </div>
       </div>
     </div>
@@ -23,12 +30,11 @@
       <h3 class="section-title">자재 리스트</h3>
       <div class="table-wrapper">
         <va-data-table
+          v-model:current-page="page"
           :items="materialChekck"
           :columns="columns"
           :per-page="perPage"
-          :current-page.sync="page"
         >
-
           <template #cell(received_date)="{ row }">
             {{ formatDateForView(row.source.received_date) }}
           </template>
@@ -49,75 +55,72 @@
 </template>
 
 <script lang="ts" setup>
-import axios from 'axios'
-import { ref, onMounted } from 'vue'
+import axios from "axios";
+import { ref, onMounted } from "vue";
 
 interface MaterialChekck {
-  material_code: string
-  material_name: string
-  quantity: number
-  material_unit: string
-  material_stand: string
-  received_date: string
-  expiry_date: string
-  material_cls: string
+  material_code: string;
+  material_name: string;
+  quantity: number;
+  material_unit: string;
+  material_stand: string;
+  received_date: string;
+  expiry_date: string;
+  material_cls: string;
 }
 
 const filters = ref({
-  material_code: '',
-  material_name: '',
-  material_unit: '',
-  material_cls: '',
+  material_code: "",
+  material_name: "",
+  material_unit: "",
+  material_cls: "",
   expiry_date: null as Date | null,
-  material_stand: ''
-})
+  material_stand: "",
+});
 
-const materialChekck = ref<MaterialChekck[]>([])
-const allMaterialChekck = ref<MaterialChekck[]>([])
-const perPage = 5
+const materialChekck = ref<MaterialChekck[]>([]);
+const allMaterialChekck = ref<MaterialChekck[]>([]);
+const perPage = 5;
 
-const page = ref(1)
-
+const page = ref(1);
 
 const formatDateForView = (date: Date | string | null | undefined): string => {
-  if (!date) return ''
-  const d = typeof date === 'string' ? new Date(date) : date
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
-}
+  if (!date) return "";
+  const d = typeof date === "string" ? new Date(date) : date;
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+};
 
 const columns = [
-  { key: 'material_code', label: '자재코드' },
-  { key: 'material_name', label: '자재명' },
-  { key: 'quantity', label: '재고' },
-  { key: 'material_unit', label: '단위' },
-  { key: 'material_stand', label: '규격' },
-  { key: 'received_date', label: '입고 일자' },
-  { key: 'expiry_date', label: '유통기한' },
-  { key: 'material_cls', label: '분류' }
-]
+  { key: "material_code", label: "자재코드" },
+  { key: "material_name", label: "자재명" },
+  { key: "quantity", label: "재고" },
+  { key: "material_unit", label: "단위" },
+  { key: "material_stand", label: "규격" },
+  { key: "received_date", label: "입고 일자" },
+  { key: "expiry_date", label: "유통기한" },
+  { key: "material_cls", label: "분류" },
+];
 
 const fetchPurchase = async () => {
   try {
-    const res = await axios.get('/materialCheck')
-    allMaterialChekck.value = Array.isArray(res.data) ? res.data : []
-    materialChekck.value = [...allMaterialChekck.value]
-    console.log("allOrders: ", res.data)
-    console.log("order: ", materialChekck.value)
-    
+    const res = await axios.get("/materialCheck");
+    allMaterialChekck.value = Array.isArray(res.data) ? res.data : [];
+    materialChekck.value = [...allMaterialChekck.value];
+    console.log("allOrders: ", res.data);
+    console.log("order: ", materialChekck.value);
   } catch (err) {
-    console.error('계획 조회 실패', err)
-    allMaterialChekck.value = []
+    console.error("계획 조회 실패", err);
+    allMaterialChekck.value = [];
   }
-}
+};
 
 function isSameDate(d1: Date, d2: Date): boolean {
   return (
     d1.getFullYear() === d2.getFullYear() &&
     d1.getMonth() === d2.getMonth() &&
     d1.getDate() === d2.getDate()
-  )
+  );
 }
-
 
 function searchOrders() {
   const {
@@ -127,17 +130,23 @@ function searchOrders() {
     material_stand,
     expiry_date,
     material_cls,
-  } = filters.value
+  } = filters.value;
 
   materialChekck.value = allMaterialChekck.value.filter((materialChekck) => {
-    const matchesMaterialCode = !material_code || materialChekck.material_code.includes(material_code)
-    const matchesMaterialName = !material_name || materialChekck.material_name.includes(material_name)
-    const matchesMaterialUnit = !material_unit || materialChekck.material_unit.includes(material_unit)
-    const matchesMaterialStand = !material_stand || materialChekck.material_stand.includes(material_stand)
-    const matchesMaterialCls = !material_cls || materialChekck.material_cls.includes(material_cls)
+    const matchesMaterialCode =
+      !material_code || materialChekck.material_code.includes(material_code);
+    const matchesMaterialName =
+      !material_name || materialChekck.material_name.includes(material_name);
+    const matchesMaterialUnit =
+      !material_unit || materialChekck.material_unit.includes(material_unit);
+    const matchesMaterialStand =
+      !material_stand || materialChekck.material_stand.includes(material_stand);
+    const matchesMaterialCls =
+      !material_cls || materialChekck.material_cls.includes(material_cls);
 
     const matchesOutboundDate =
-      !expiry_date || isSameDate(new Date(materialChekck.expiry_date), new Date(expiry_date))
+      !expiry_date ||
+      isSameDate(new Date(materialChekck.expiry_date), new Date(expiry_date));
 
     return (
       matchesMaterialCode &&
@@ -146,28 +155,26 @@ function searchOrders() {
       matchesMaterialStand &&
       matchesMaterialCls &&
       matchesOutboundDate
-    )
-  })
-  page.value = 1
+    );
+  });
+  page.value = 1;
 }
 
 function resetFilters() {
   filters.value = {
-    material_code: '',
-    material_name: '',
-    material_unit: '',
-    material_stand: '',
+    material_code: "",
+    material_name: "",
+    material_unit: "",
+    material_stand: "",
     expiry_date: null,
-    material_cls: '',
-  }
+    material_cls: "",
+  };
 }
 
 onMounted(() => {
-  fetchPurchase()
-})
+  fetchPurchase();
+});
 </script>
-
-
 
 <style scoped>
 .order-search-page {

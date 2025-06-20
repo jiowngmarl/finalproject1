@@ -1,26 +1,26 @@
-import CardListItem from './PaymentCardListItem.vue'
-import { PaymentSystemType, PaymentCard } from '../../types'
+import CardListItem from "./PaymentCardListItem.vue";
+import { PaymentSystemType, PaymentCard } from "../../types";
 
 export default {
-  title: 'CardListItem',
+  title: "CardListItem",
   component: CardListItem,
-  tags: ['autodocs'],
-}
+  tags: ["autodocs"],
+};
 
 export const Default = () => ({
   components: { CardListItem },
   data() {
     return {
       card: {
-        id: '1',
-        name: 'Main card',
+        id: "1",
+        name: "Main card",
         isPrimary: true,
         paymentSystem: PaymentSystemType.Visa,
-        cardNumberMasked: '****1679',
-        expirationDate: '09/24',
+        cardNumberMasked: "****1679",
+        expirationDate: "09/24",
       } satisfies PaymentCard,
-      lastEvent: '___',
-    }
+      lastEvent: "___",
+    };
   },
   template: `
     <CardListItem
@@ -31,4 +31,4 @@ export const Default = () => ({
     <br>
     <p>Last event: <span data-testid>{{ lastEvent }}</span></p>
   `,
-})
+});

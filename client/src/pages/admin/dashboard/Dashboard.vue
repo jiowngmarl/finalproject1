@@ -4,7 +4,7 @@
 
     <!-- 로딩 상태 -->
     <div v-if="loading" class="loading-container">
-      <div class="loading-spinner"></div>
+      <div class="loading-spinner" />
       <p>대시보드 데이터를 불러오는 중...</p>
     </div>
 
@@ -13,7 +13,9 @@
       <div class="error-message">
         <h3>오류 발생</h3>
         <p>{{ error }}</p>
-        <button @click="fetchDashboardData" class="retry-button">다시 시도</button>
+        <button class="retry-button" @click="fetchDashboardData">
+          다시 시도
+        </button>
       </div>
     </div>
 
@@ -26,34 +28,42 @@
             <div class="stat-info">
               <div class="stat-label">총 주문 건수</div>
               <div class="stat-sublabel">(이번 달)</div>
-              <div class="stat-value">{{ dashboardData.totalOrders }}</div>
+              <div class="stat-value">
+                {{ dashboardData.totalOrders }}
+              </div>
               <div class="stat-unit">건</div>
             </div>
           </div>
-          
+
           <div class="stat-card">
             <div class="stat-info">
               <div class="stat-label">설비 가동률</div>
               <div class="stat-sublabel">(현재)</div>
-              <div class="stat-value">{{ dashboardData.equipmentEfficiency }}</div>
+              <div class="stat-value">
+                {{ dashboardData.equipmentEfficiency }}
+              </div>
               <div class="stat-unit">%</div>
             </div>
           </div>
-          
+
           <div class="stat-card">
             <div class="stat-info">
               <div class="stat-label">평균 납기일</div>
               <div class="stat-sublabel">(이번 달)</div>
-              <div class="stat-value">{{ dashboardData.avgDeliveryDays }}</div>
+              <div class="stat-value">
+                {{ dashboardData.avgDeliveryDays }}
+              </div>
               <div class="stat-unit">일</div>
             </div>
           </div>
-          
+
           <div class="stat-card">
             <div class="stat-info">
               <div class="stat-label">품질 합격률</div>
               <div class="stat-sublabel">(최근 7일)</div>
-              <div class="stat-value">{{ dashboardData.qualityPassRate }}</div>
+              <div class="stat-value">
+                {{ dashboardData.qualityPassRate }}
+              </div>
               <div class="stat-unit">%</div>
             </div>
           </div>
@@ -70,20 +80,20 @@
               <div class="chart-subtitle">최근 6개월</div>
             </div>
             <div class="chart-container">
-              <canvas ref="productionChart" width="400" height="200"></canvas>
+              <canvas ref="productionChart" width="400" height="200" />
               <div v-if="productionData.length === 0" class="no-data">
                 생산량 데이터가 없습니다
               </div>
             </div>
           </div>
-          
+
           <div class="chart-card">
             <div class="chart-header">
               <h3 class="chart-title">설비 가동률 추이</h3>
               <div class="chart-subtitle">최근 6개월</div>
             </div>
             <div class="chart-container">
-              <canvas ref="equipmentChart" width="400" height="200"></canvas>
+              <canvas ref="equipmentChart" width="400" height="200" />
               <div v-if="equipmentData.length === 0" class="no-data">
                 설비 가동률 데이터가 없습니다
               </div>
@@ -99,13 +109,13 @@
               <div class="chart-subtitle">이번 달 기준</div>
             </div>
             <div class="chart-container">
-              <canvas ref="productChart" width="400" height="350"></canvas>
+              <canvas ref="productChart" width="400" height="350" />
               <div v-if="productRatioData.length === 0" class="no-data">
                 제품별 데이터가 없습니다
               </div>
             </div>
           </div>
-          
+
           <div class="chart-card">
             <div class="chart-header">
               <h3 class="chart-title">공정별 현황</h3>
@@ -115,39 +125,54 @@
               <div class="process-item">
                 <div class="process-label">자재 준비</div>
                 <div class="process-bar">
-                  <div class="process-fill" :style="{ width: `${processStatus.material}%` }"></div>
+                  <div
+                    class="process-fill"
+                    :style="{ width: `${processStatus.material}%` }"
+                  />
                 </div>
                 <div class="process-value">{{ processStatus.material }}%</div>
               </div>
-              
+
               <div class="process-item">
                 <div class="process-label">생산</div>
                 <div class="process-bar">
-                  <div class="process-fill" :style="{ width: `${processStatus.production}%` }"></div>
+                  <div
+                    class="process-fill"
+                    :style="{ width: `${processStatus.production}%` }"
+                  />
                 </div>
                 <div class="process-value">{{ processStatus.production }}%</div>
               </div>
-              
+
               <div class="process-item">
                 <div class="process-label">품질검사</div>
                 <div class="process-bar">
-                  <div class="process-fill" :style="{ width: `${processStatus.quality}%` }"></div>
+                  <div
+                    class="process-fill"
+                    :style="{ width: `${processStatus.quality}%` }"
+                  />
                 </div>
                 <div class="process-value">{{ processStatus.quality }}%</div>
               </div>
-              
+
               <div class="process-item">
                 <div class="process-label">포장</div>
                 <div class="process-bar">
-                  <div class="process-fill" :style="{ width: `${processStatus.packaging}%` }"></div>
+                  <div
+                    class="process-fill"
+                    :style="{ width: `${processStatus.packaging}%` }"
+                  />
                 </div>
                 <div class="process-value">{{ processStatus.packaging }}%</div>
               </div>
-              
+
               <div class="process-item">
                 <div class="process-label">출하</div>
                 <div class="process-bar">
-                  <div class="process-fill" :style="{ width: `${processStatus.shipping}%` }"></div>
+                  <div
+                    class="process-fill"
+                    :style="{ width: `${processStatus.shipping}%` }"
+                  />
                 </div>
                 <div class="process-value">{{ processStatus.shipping }}%</div>
               </div>
@@ -160,342 +185,355 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, reactive, ref, computed } from 'vue'
-import axios from 'axios'
+import { onMounted, reactive, ref, computed } from "vue";
+import axios from "axios";
 
 // 타입 정의
 interface DashboardStats {
-  totalOrders: number
-  equipmentEfficiency: number
-  avgDeliveryDays: number
-  qualityPassRate: number
+  totalOrders: number;
+  equipmentEfficiency: number;
+  avgDeliveryDays: number;
+  qualityPassRate: number;
 }
 
 interface ProductionData {
-  month: string
-  value: number
+  month: string;
+  value: number;
 }
 
 interface ProductRatio {
-  name: string
-  value: number
-  color: string
+  name: string;
+  value: number;
+  color: string;
 }
 
 interface EquipmentData {
-  month: string
-  efficiency: number
+  month: string;
+  efficiency: number;
 }
 
 interface ProcessStatus {
-  material: number
-  production: number
-  quality: number
-  packaging: number
-  shipping: number
+  material: number;
+  production: number;
+  quality: number;
+  packaging: number;
+  shipping: number;
 }
 
 interface DashboardResponse {
-  stats: DashboardStats
-  productionData: ProductionData[]
-  equipmentData: EquipmentData[]
-  productRatios: ProductRatio[]
-  processStatus: ProcessStatus
+  stats: DashboardStats;
+  productionData: ProductionData[];
+  equipmentData: EquipmentData[];
+  productRatios: ProductRatio[];
+  processStatus: ProcessStatus;
 }
 
 // 컴포넌트 설정
-const productionChart = ref<HTMLCanvasElement>()
-const equipmentChart = ref<HTMLCanvasElement>()
-const productChart = ref<HTMLCanvasElement>()
+const productionChart = ref<HTMLCanvasElement>();
+const equipmentChart = ref<HTMLCanvasElement>();
+const productChart = ref<HTMLCanvasElement>();
 
 // 상태 관리
-const loading = ref(true)
-const error = ref<string | null>(null)
-const lastUpdatedTime = ref<Date>(new Date())
+const loading = ref(true);
+const error = ref<string | null>(null);
+const lastUpdatedTime = ref<Date>(new Date());
 
 // 대시보드 데이터
 const dashboardData = reactive<DashboardStats>({
   totalOrders: 0,
   equipmentEfficiency: 0,
   avgDeliveryDays: 0,
-  qualityPassRate: 0
-})
+  qualityPassRate: 0,
+});
 
 // 차트 데이터
-const productionData = ref<ProductionData[]>([])
-const equipmentData = ref<EquipmentData[]>([])
-const productRatioData = ref<ProductRatio[]>([])
+const productionData = ref<ProductionData[]>([]);
+const equipmentData = ref<EquipmentData[]>([]);
+const productRatioData = ref<ProductRatio[]>([]);
 const processStatus = reactive<ProcessStatus>({
   material: 0,
   production: 0,
   quality: 0,
   packaging: 0,
-  shipping: 0
-})
+  shipping: 0,
+});
 
 // 계산된 속성
 const lastUpdated = computed(() => {
-  return lastUpdatedTime.value.toLocaleString('ko-KR')
-})
+  return lastUpdatedTime.value.toLocaleString("ko-KR");
+});
 
 // API 호출 함수 (완전 공개 - 인증 없음)
 const fetchDashboardData = async () => {
   try {
-    loading.value = true
-    error.value = null
-    
-    console.log('대시보드 데이터 요청 시작 (공개 접근)...')
-    
+    loading.value = true;
+    error.value = null;
+
+    console.log("대시보드 데이터 요청 시작 (공개 접근)...");
+
     // 완전 공개 요청 - 인증 헤더 완전 제거
-    const response = await axios.get<DashboardResponse>('/dashboard/summary', {
+    const response = await axios.get<DashboardResponse>("/dashboard/summary", {
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
       timeout: 10000,
-      withCredentials: false
-    })
-    
-    const data = response.data
-    
-    console.log('받은 데이터 (공개):', data)
-    
+      withCredentials: false,
+    });
+
+    const data = response.data;
+
+    console.log("받은 데이터 (공개):", data);
+
     // 통계 데이터 업데이트
-    Object.assign(dashboardData, data.stats)
-    
+    Object.assign(dashboardData, data.stats);
+
     // 차트 데이터 업데이트
-    productionData.value = data.productionData || []
-    equipmentData.value = data.equipmentData || []
-    productRatioData.value = data.productRatios || []
-    
+    productionData.value = data.productionData || [];
+    equipmentData.value = data.equipmentData || [];
+    productRatioData.value = data.productRatios || [];
+
     // 공정 상태 업데이트
-    Object.assign(processStatus, data.processStatus)
-    
+    Object.assign(processStatus, data.processStatus);
+
     // 마지막 업데이트 시간 갱신
-    lastUpdatedTime.value = new Date()
-    
-    console.log('대시보드 데이터 로드 완료 (공개 접근)')
-    
+    lastUpdatedTime.value = new Date();
+
+    console.log("대시보드 데이터 로드 완료 (공개 접근)");
   } catch (err: any) {
-    console.error('대시보드 데이터 로드 실패:', err)
-    
+    console.error("대시보드 데이터 로드 실패:", err);
+
     // 자세한 에러 정보
     if (err.response) {
-      console.error('에러 상세 정보:')
-      console.error('- 상태 코드:', err.response.status)
-      console.error('- 상태 텍스트:', err.response.statusText)
-      console.error('- 응답 데이터:', err.response.data)
-      
+      console.error("에러 상세 정보:");
+      console.error("- 상태 코드:", err.response.status);
+      console.error("- 상태 텍스트:", err.response.statusText);
+      console.error("- 응답 데이터:", err.response.data);
+
       if (err.response.status === 401) {
-        error.value = '대시보드 접근이 차단되었습니다. 서버 설정을 확인해주세요.'
+        error.value =
+          "대시보드 접근이 차단되었습니다. 서버 설정을 확인해주세요.";
       } else if (err.response.status === 404) {
-        error.value = '대시보드 API를 찾을 수 없습니다.'
+        error.value = "대시보드 API를 찾을 수 없습니다.";
       } else {
-        error.value = `서버 오류가 발생했습니다. (${err.response.status})`
+        error.value = `서버 오류가 발생했습니다. (${err.response.status})`;
       }
     } else if (err.request) {
-      console.error('- 네트워크 오류:', err.request)
-      error.value = '서버에 연결할 수 없습니다. 네트워크를 확인해주세요.'
+      console.error("- 네트워크 오류:", err.request);
+      error.value = "서버에 연결할 수 없습니다. 네트워크를 확인해주세요.";
     } else {
-      console.error('- 설정 오류:', err.message)
-      error.value = `요청 설정 오류: ${err.message}`
+      console.error("- 설정 오류:", err.message);
+      error.value = `요청 설정 오류: ${err.message}`;
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // 차트 렌더링 함수들
-const drawLineChart = (canvas: HTMLCanvasElement, data: ProductionData[], label: string) => {
-  const ctx = canvas.getContext('2d')
-  if (!ctx || data.length === 0) return
+const drawLineChart = (
+  canvas: HTMLCanvasElement,
+  data: ProductionData[],
+  label: string,
+) => {
+  const ctx = canvas.getContext("2d");
+  if (!ctx || data.length === 0) return;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-  
-  const padding = 50
-  const chartWidth = canvas.width - padding * 2
-  const chartHeight = canvas.height - padding * 2
-  
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const padding = 50;
+  const chartWidth = canvas.width - padding * 2;
+  const chartHeight = canvas.height - padding * 2;
+
   // 배경
-  ctx.fillStyle = '#fafafa'
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
-  
+  ctx.fillStyle = "#fafafa";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
   // 격자
-  ctx.strokeStyle = '#e0e0e0'
-  ctx.lineWidth = 1
+  ctx.strokeStyle = "#e0e0e0";
+  ctx.lineWidth = 1;
   for (let i = 0; i <= 5; i++) {
-    const y = padding + (chartHeight / 5) * i
-    ctx.beginPath()
-    ctx.moveTo(padding, y)
-    ctx.lineTo(canvas.width - padding, y)
-    ctx.stroke()
+    const y = padding + (chartHeight / 5) * i;
+    ctx.beginPath();
+    ctx.moveTo(padding, y);
+    ctx.lineTo(canvas.width - padding, y);
+    ctx.stroke();
   }
-  
+
   // 데이터 라인
-  const maxValue = Math.max(...data.map(d => d.value))
-  const minValue = Math.min(...data.map(d => d.value))
-  const range = maxValue - minValue || 1
-  
-  ctx.strokeStyle = '#4ECDC4'
-  ctx.lineWidth = 3
-  ctx.beginPath()
-  
+  const maxValue = Math.max(...data.map((d) => d.value));
+  const minValue = Math.min(...data.map((d) => d.value));
+  const range = maxValue - minValue || 1;
+
+  ctx.strokeStyle = "#4ECDC4";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+
   data.forEach((item, index) => {
-    const x = padding + (chartWidth / (data.length - 1)) * index
-    const y = padding + chartHeight - ((item.value - minValue) / range) * chartHeight
-    
+    const x = padding + (chartWidth / (data.length - 1)) * index;
+    const y =
+      padding + chartHeight - ((item.value - minValue) / range) * chartHeight;
+
     if (index === 0) {
-      ctx.moveTo(x, y)
+      ctx.moveTo(x, y);
     } else {
-      ctx.lineTo(x, y)
+      ctx.lineTo(x, y);
     }
-    
+
     // 데이터 포인트
-    ctx.fillStyle = '#4ECDC4'
-    ctx.beginPath()
-    ctx.arc(x, y, 5, 0, Math.PI * 2)
-    ctx.fill()
-    
+    ctx.fillStyle = "#4ECDC4";
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fill();
+
     // 값 표시
-    ctx.fillStyle = '#333'
-    ctx.font = '12px Arial'
-    ctx.textAlign = 'center'
-    ctx.fillText(item.value.toLocaleString(), x, y - 10)
-    
+    ctx.fillStyle = "#333";
+    ctx.font = "12px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(item.value.toLocaleString(), x, y - 10);
+
     // 월 표시
-    ctx.fillText(`${item.month}월`, x, canvas.height - 10)
-  })
-  
-  ctx.stroke()
-}
+    ctx.fillText(`${item.month}월`, x, canvas.height - 10);
+  });
+
+  ctx.stroke();
+};
 
 const drawBarChart = (canvas: HTMLCanvasElement, data: any[]) => {
-  const ctx = canvas.getContext('2d')
-  if (!ctx || data.length === 0) return
+  const ctx = canvas.getContext("2d");
+  if (!ctx || data.length === 0) return;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-  
-  const padding = 50
-  const chartWidth = canvas.width - padding * 2
-  const chartHeight = canvas.height - padding * 2
-  
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const padding = 50;
+  const chartWidth = canvas.width - padding * 2;
+  const chartHeight = canvas.height - padding * 2;
+
   // 배경
-  ctx.fillStyle = '#fafafa'
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
-  
-  const maxValue = Math.max(...data.map(d => d.efficiency || d), 100)
-  const barWidth = chartWidth / data.length * 0.6
-  const barSpacing = chartWidth / data.length * 0.4
-  
+  ctx.fillStyle = "#fafafa";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const maxValue = Math.max(...data.map((d) => d.efficiency || d), 100);
+  const barWidth = (chartWidth / data.length) * 0.6;
+  const barSpacing = (chartWidth / data.length) * 0.4;
+
   data.forEach((item, index) => {
-    const value = item.efficiency || item
-    const month = item.month || (index + 1)
-    
-    const barHeight = (value / maxValue) * chartHeight
-    const x = padding + index * (barWidth + barSpacing) + barSpacing / 2
-    const y = padding + chartHeight - barHeight
-    
+    const value = item.efficiency || item;
+    const month = item.month || index + 1;
+
+    const barHeight = (value / maxValue) * chartHeight;
+    const x = padding + index * (barWidth + barSpacing) + barSpacing / 2;
+    const y = padding + chartHeight - barHeight;
+
     // 막대
-    ctx.fillStyle = value >= 90 ? '#4CAF50' : value >= 70 ? '#FF9800' : '#F44336'
-    ctx.fillRect(x, y, barWidth, barHeight)
-    
+    ctx.fillStyle =
+      value >= 90 ? "#4CAF50" : value >= 70 ? "#FF9800" : "#F44336";
+    ctx.fillRect(x, y, barWidth, barHeight);
+
     // 값 표시
-    ctx.fillStyle = '#333'
-    ctx.font = '12px Arial'
-    ctx.textAlign = 'center'
-    ctx.fillText(`${value}%`, x + barWidth / 2, y - 5)
-    
+    ctx.fillStyle = "#333";
+    ctx.font = "12px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(`${value}%`, x + barWidth / 2, y - 5);
+
     // 월 표시
-    ctx.fillText(`${month}월`, x + barWidth / 2, canvas.height - 10)
-  })
-}
+    ctx.fillText(`${month}월`, x + barWidth / 2, canvas.height - 10);
+  });
+};
 
 const drawDoughnutChart = (canvas: HTMLCanvasElement, data: ProductRatio[]) => {
-  const ctx = canvas.getContext('2d')
-  if (!ctx || data.length === 0) return
+  const ctx = canvas.getContext("2d");
+  if (!ctx || data.length === 0) return;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-  
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   // 차트와 범례 공간 조정
-  const centerX = canvas.width / 2
-  const centerY = canvas.height / 2 - 30
-  const radius = Math.min(centerX, centerY) - 60
-  const innerRadius = radius * 0.6
-  
-  const total = data.reduce((sum, item) => sum + item.value, 0)
-  let currentAngle = -Math.PI / 2
-  
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2 - 30;
+  const radius = Math.min(centerX, centerY) - 60;
+  const innerRadius = radius * 0.6;
+
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  let currentAngle = -Math.PI / 2;
+
   // 도넛 차트 그리기
-  data.forEach(item => {
-    const sliceAngle = (item.value / total) * 2 * Math.PI
-    
+  data.forEach((item) => {
+    const sliceAngle = (item.value / total) * 2 * Math.PI;
+
     // 도넛 조각
-    ctx.beginPath()
-    ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle)
-    ctx.arc(centerX, centerY, innerRadius, currentAngle + sliceAngle, currentAngle, true)
-    ctx.closePath()
-    ctx.fillStyle = item.color
-    ctx.fill()
-    
-    currentAngle += sliceAngle
-  })
-  
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+    ctx.arc(
+      centerX,
+      centerY,
+      innerRadius,
+      currentAngle + sliceAngle,
+      currentAngle,
+      true,
+    );
+    ctx.closePath();
+    ctx.fillStyle = item.color;
+    ctx.fill();
+
+    currentAngle += sliceAngle;
+  });
+
   // 범례를 차트 아래쪽에 배치
-  const legendStartY = centerY + radius + 20
-  const legendItemHeight = 18
-  const maxItemsPerRow = 2
-  
+  const legendStartY = centerY + radius + 20;
+  const legendItemHeight = 18;
+  const maxItemsPerRow = 2;
+
   data.forEach((item, index) => {
-    const row = Math.floor(index / maxItemsPerRow)
-    const col = index % maxItemsPerRow
-    
-    const legendX = 20 + col * 180
-    const legendY = legendStartY + row * legendItemHeight
-    
+    const row = Math.floor(index / maxItemsPerRow);
+    const col = index % maxItemsPerRow;
+
+    const legendX = 20 + col * 180;
+    const legendY = legendStartY + row * legendItemHeight;
+
     // 범례가 캔버스를 벗어나지 않도록 체크
     if (legendY + legendItemHeight < canvas.height) {
       // 색상 박스
-      ctx.fillStyle = item.color
-      ctx.fillRect(legendX, legendY, 12, 12)
-      
+      ctx.fillStyle = item.color;
+      ctx.fillRect(legendX, legendY, 12, 12);
+
       // 텍스트
-      ctx.fillStyle = '#333'
-      ctx.font = '11px Arial'
-      ctx.fillText(`${item.name} (${item.value}%)`, legendX + 18, legendY + 9)
+      ctx.fillStyle = "#333";
+      ctx.font = "11px Arial";
+      ctx.fillText(`${item.name} (${item.value}%)`, legendX + 18, legendY + 9);
     }
-  })
-}
+  });
+};
 
 // 컴포넌트 초기화
 onMounted(async () => {
-  console.log('Dashboard 컴포넌트 마운트')
-  
+  console.log("Dashboard 컴포넌트 마운트");
+
   // 대시보드 데이터 로드
-  await fetchDashboardData()
-  
+  await fetchDashboardData();
+
   // 데이터 로드 완료 후 차트 렌더링
   if (!loading.value && !error.value) {
     setTimeout(() => {
-      renderCharts()
-    }, 100)
+      renderCharts();
+    }, 100);
   }
-})
+});
 
 // 차트 렌더링 함수
 const renderCharts = () => {
-  console.log('차트 렌더링 시작')
-  
+  console.log("차트 렌더링 시작");
+
   if (productionChart.value && productionData.value.length > 0) {
-    drawLineChart(productionChart.value, productionData.value, '생산량')
+    drawLineChart(productionChart.value, productionData.value, "생산량");
   }
   if (equipmentChart.value && equipmentData.value.length > 0) {
-    drawBarChart(equipmentChart.value, equipmentData.value)
+    drawBarChart(equipmentChart.value, equipmentData.value);
   }
   if (productChart.value && productRatioData.value.length > 0) {
-    drawDoughnutChart(productChart.value, productRatioData.value)
+    drawDoughnutChart(productChart.value, productRatioData.value);
   }
-  
-  console.log('차트 렌더링 완료')
-}
+
+  console.log("차트 렌더링 완료");
+};
 </script>
 
 <style scoped>
@@ -543,8 +581,12 @@ const renderCharts = () => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* 에러 상태 */
@@ -561,7 +603,7 @@ const renderCharts = () => {
   padding: 30px;
   text-align: center;
   max-width: 500px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .error-message h3 {
@@ -606,7 +648,7 @@ const renderCharts = () => {
 }
 
 .stat-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .stat-info {
@@ -754,19 +796,19 @@ const renderCharts = () => {
   .dashboard-container {
     padding: 15px;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .stat-card {
     padding: 15px;
   }
-  
+
   .chart-card {
     padding: 15px;
   }
-  
+
   .process-label {
     min-width: 80px;
   }

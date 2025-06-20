@@ -3,7 +3,9 @@
     <VaCardContent>
       <section>
         <header class="flex items-center justify-between">
-          <div class="text-lg font-semibold grow">{{ value }}</div>
+          <div class="text-lg font-semibold grow">
+            {{ value }}
+          </div>
           <div
             class="p-1 rounded"
             :style="{
@@ -11,11 +13,13 @@
               color: iconColor,
             }"
           >
-            <slot name="icon"></slot>
+            <slot name="icon" />
           </div>
         </header>
         <div>
-          <p class="mb-2">{{ title }}</p>
+          <p class="mb-2">
+            {{ title }}
+          </p>
           <p class="text-xs text-secondary">
             <span :class="changeClass">
               <template v-if="up">↑</template>
@@ -31,20 +35,20 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
-import { VaCard } from 'vuestic-ui'
+import { computed } from "vue";
+import { VaCard } from "vuestic-ui";
 
 const props = defineProps<{
-  title: string
-  value: string | number
-  changeText: string
-  up: boolean
-  iconBackground: string
-  iconColor: string
-}>()
+  title: string;
+  value: string | number;
+  changeText: string;
+  up: boolean;
+  iconBackground: string;
+  iconColor: string;
+}>();
 
 const changeClass = computed(() => ({
-  'text-success': props.up,
-  'text-red-600': !props.up,
-}))
+  "text-success": props.up,
+  "text-red-600": !props.up,
+}));
 </script>

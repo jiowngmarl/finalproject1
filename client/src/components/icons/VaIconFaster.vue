@@ -1,9 +1,20 @@
 <template>
-  <svg class="va-icon-faster" version="1.1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <svg
+    class="va-icon-faster"
+    version="1.1"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
     <!-- Generator: sketchtool 48.2 (47327) - http://www.bohemiancoding.com/sketch -->
     <title>62EBC3B8-A55C-4B01-95A2-52FB8EDD4150</title>
     <defs />
-    <g id="symbols" fill="none" fill-rule="evenodd" stroke="none" stroke-width="1">
+    <g
+      id="symbols"
+      fill="none"
+      fill-rule="evenodd"
+      stroke="none"
+      stroke-width="1"
+    >
       <g id="icon-faster" fill="#34495E">
         <g>
           <path

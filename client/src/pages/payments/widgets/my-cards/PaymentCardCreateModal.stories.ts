@@ -1,18 +1,18 @@
-import PaymentCardCreateModal from './PaymentCardCreateModal.vue'
+import PaymentCardCreateModal from "./PaymentCardCreateModal.vue";
 
 export default {
   components: { PaymentCardCreateModal },
-  title: 'PaymentCardCreateModal',
+  title: "PaymentCardCreateModal",
   component: PaymentCardCreateModal,
-  tags: ['autodocs'],
-}
+  tags: ["autodocs"],
+};
 
 export const Default = () => ({
   components: { PaymentCardCreateModal },
   data() {
     return {
       showModal: false,
-    }
+    };
   },
   template: `
     <va-button @click="showModal = !showModal">
@@ -20,4 +20,4 @@ export const Default = () => ({
     </va-button>
     <PaymentCardCreateModal v-if="showModal" @close="showModal = false"/>
   `,
-})
+});

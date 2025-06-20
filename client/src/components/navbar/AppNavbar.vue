@@ -23,18 +23,18 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from 'pinia'
-import { useGlobalStore } from '../../stores/global-store'
-import AppNavbarActions from './components/AppNavbarActions.vue'
-import VuesticLogo from '../VuesticLogo.vue'
+import { storeToRefs } from "pinia";
+import { useGlobalStore } from "../../stores/global-store";
+import AppNavbarActions from "./components/AppNavbarActions.vue";
+import VuesticLogo from "../VuesticLogo.vue";
 
 defineProps({
   isMobile: { type: Boolean, default: false },
-})
+});
 
-const GlobalStore = useGlobalStore()
+const GlobalStore = useGlobalStore();
 
-const { isSidebarMinimized } = storeToRefs(GlobalStore)
+const { isSidebarMinimized } = storeToRefs(GlobalStore);
 </script>
 
 <style lang="scss" scoped>

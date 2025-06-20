@@ -2,6 +2,14 @@
 require("dotenv").config({ path: "./database/configs/dbConfig.env" });
 const express = require("express");
 const app = express();
+const path = require('path');
+const publicPath = path.join(__dirname, 'public');
+app.use(express.static(publicPath));
+const port = 3000;
+
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
+});
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -15,14 +23,10 @@ app.use((req, res, next) => {
 
 });
 
+
 // 미들웨어 등록 영역
 // 1. body parser
 // 라우팅 등록 영역
-
-// 기본 라우팅
-app.get("/", (req, res) => {
-    res.send("Welcome!!...");
-});
 
  // content-type : application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended:false}));
@@ -147,3 +151,12 @@ app.use('/inspections', inspectionRouter);
 app.use('/materialInspections', materialInspectionRouter);
 app.use('/defects', defectRouter);
 app.use('/qualitys', qualityRouter);
+
+app.get("/", function (req, res, next) {
+  res.sendFile(path.join(__dirname, "./public", "index.html"));
+});
+
+
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, "./public", "index.html"));
+});

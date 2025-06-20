@@ -16,7 +16,7 @@
           value-by="value"
           text-by="label"
           placeholder="제품을 선택하세요"
-          @update:modelValue="onProductChange"
+          @update:model-value="onProductChange"
         />
 
         <!-- 작업지시서 번호 선택 -->
@@ -31,21 +31,21 @@
           :disabled="workOrderOptions.length === 0"
         />
       </div>
-        <div class="input-row">
-          <va-input v-model="resultInfo.processName" label="공정명" readonly />
-          <va-input v-model="resultInfo.managerId" label="담당자" readonly />
-          <va-input v-model="resultInfo.passQty" label="투입량" readonly />
-        </div>
-        <div class="input-row">
-          <va-input
-            v-if="finalResult === '불합'"
-            v-model="form.qualRemark"
-            label="불합 판정 상세 사유"
-            placeholder="불합 사유를 입력하세요"
-            class="half-width"
-            :rules="[(v) => !!v || '불합 사유는 필수입니다.']"
-          />
-        </div>
+      <div class="input-row">
+        <va-input v-model="resultInfo.processName" label="공정명" readonly />
+        <va-input v-model="resultInfo.managerId" label="담당자" readonly />
+        <va-input v-model="resultInfo.passQty" label="투입량" readonly />
+      </div>
+      <div class="input-row">
+        <va-input
+          v-if="finalResult === '불합'"
+          v-model="form.qualRemark"
+          label="불합 판정 상세 사유"
+          placeholder="불합 사유를 입력하세요"
+          class="half-width"
+          :rules="[(v) => !!v || '불합 사유는 필수입니다.']"
+        />
+      </div>
     </div>
     <div class="form-section">
       <table class="custom-table">
@@ -58,46 +58,46 @@
             <th>판정결과</th>
           </tr>
         </thead>
-         <tbody>
+        <tbody>
           <tr v-for="(item, index) in inspectionStandardList" :key="index">
             <td>{{ item.insp_value_type }}</td>
             <td>{{ item.insp_unit }}</td>
             <td>{{ item.insp_value_qty }}</td>
             <td>
-            <va-input
-              v-model.number="item.insp_measured_value"
-              @input="evaluateResult(item)"
-              type="number"
-              placeholder="측정값 입력"
-            />
+              <va-input
+                v-model.number="item.insp_measured_value"
+                type="number"
+                placeholder="측정값 입력"
+                @input="evaluateResult(item)"
+              />
             </td>
-            <td>      
+            <td>
               <va-input
                 :model-value="item.insp_result || '판정대기'"
                 readonly
                 color="primary"
               />
-            </td>   
+            </td>
           </tr>
         </tbody>
       </table>
       <div class="form-buttons">
-        <va-button @click="submitForm" color="primary">등록</va-button>
+        <va-button color="primary" @click="submitForm"> 등록 </va-button>
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, watch, computed } from 'vue'
-import axios from 'axios'
+import { ref, onMounted, watch, computed } from "vue";
+import axios from "axios";
 
 // 폼 상태
 const form = ref({
-  productCode: '',
-  workOrderNo: '',
-  qualRemark: ''
-})
+  productCode: "",
+  workOrderNo: "",
+  qualRemark: "",
+});
 
 // 검사 기준 목록
 const inspectionStandardList = ref<
@@ -110,111 +110,117 @@ const inspectionStandardList = ref<
     insp_measured_value: number;
     insp_result: string;
   }[]
->([])
+>([]);
 
 const finalResult = computed(() => {
-  return inspectionStandardList.value.some(item => item.insp_result !== '합')
-    ? '불합'
-    : '합';
+  return inspectionStandardList.value.some((item) => item.insp_result !== "합")
+    ? "불합"
+    : "합";
 });
 
 // 제품명 옵션 리스트
-const productOptions = ref<{ label: string; value: string }[]>([])
+const productOptions = ref<{ label: string; value: string }[]>([]);
 
 // 작업지시서 번호 옵션 리스트
-const workOrderOptions = ref<{ label: string; value: string }[]>([])
+const workOrderOptions = ref<{ label: string; value: string }[]>([]);
 
 // 페이지 진입 시 제품명 목록 불러오기
 onMounted(async () => {
   try {
-    const res = await axios.get('/qualitys/productList')
+    const res = await axios.get("/qualitys/productList");
     productOptions.value = res.data.map((item: any) => ({
       label: item.product_name,
-      value: item.product_code
-    }))
+      value: item.product_code,
+    }));
   } catch (err) {
-    console.error('제품명 목록 조회 실패:', err)
+    console.error("제품명 목록 조회 실패:", err);
   }
-})
+});
 
 // 제품 선택 시 작업지시서 번호 목록 불러오기
 const onProductChange = async (selectedProductCode: string) => {
-  console.log('제품 선택:', selectedProductCode);
+  console.log("제품 선택:", selectedProductCode);
 
-  form.value.workOrderNo = ''
-  workOrderOptions.value = []
+  form.value.workOrderNo = "";
+  workOrderOptions.value = [];
 
-  if (!selectedProductCode) return
+  if (!selectedProductCode) return;
 
   try {
-    const res = await axios.get('/qualitys/workOrderNoList', {
-      params: { productCode: selectedProductCode }
-    })
+    const res = await axios.get("/qualitys/workOrderNoList", {
+      params: { productCode: selectedProductCode },
+    });
     workOrderOptions.value = res.data.map((item: any) => ({
       label: item.work_order_no,
-      value: item.work_order_no
-    }))
+      value: item.work_order_no,
+    }));
   } catch (err) {
-    console.error('작업지시서 목록 조회 실패:', err)
+    console.error("작업지시서 목록 조회 실패:", err);
   }
-}
+};
 
 const resultInfo = ref({
-  processName: '',
-  managerId: '',
-  passQty: 0
-})
+  processName: "",
+  managerId: "",
+  passQty: 0,
+});
 
 // 작업지시서 선택 시 상세 정보 조회
-watch(() => form.value.workOrderNo, async (newVal) => {
-  if (!newVal) {
-    resultInfo.value = { processName: '', managerId: '', passQty: 0 }
-    return
-  }
-
-  try {
-    const res = await axios.get('/qualitys/workOrderDetail', {
-      params: { workOrderNo: newVal }
-    })
-
-    if (res.data.length > 0) {
-      const first = res.data[0] // 여러 개 중 첫 번째만 표시
-      resultInfo.value = {
-        processName: first.process_name || '',
-        managerId: first.manager_id || '',
-        passQty: first.pass_qty || 0
-      }
-    } else {
-      resultInfo.value = { processName: '', managerId: '', passQty: 0 }
+watch(
+  () => form.value.workOrderNo,
+  async (newVal) => {
+    if (!newVal) {
+      resultInfo.value = { processName: "", managerId: "", passQty: 0 };
+      return;
     }
-  } catch (err) {
-    console.error('작업지시서 상세 조회 실패:', err)
-  }
-})
 
-watch(() => resultInfo.value.processName, async (processName) => {
-  if (!processName) {
-    inspectionStandardList.value = []
-    return
-  }
+    try {
+      const res = await axios.get("/qualitys/workOrderDetail", {
+        params: { workOrderNo: newVal },
+      });
 
-  try {
-    const res = await axios.get('/qualitys/inspectionStandard', {
-      params: { processName }
-    })
-    console.log('검사 기준 응답:', res.data) // ← 디버깅용
-    inspectionStandardList.value = res.data
-  } catch (err) {
-    console.error('검사 기준 조회 실패:', err)
-    inspectionStandardList.value = []
-  }
-})
+      if (res.data.length > 0) {
+        const first = res.data[0]; // 여러 개 중 첫 번째만 표시
+        resultInfo.value = {
+          processName: first.process_name || "",
+          managerId: first.manager_id || "",
+          passQty: first.pass_qty || 0,
+        };
+      } else {
+        resultInfo.value = { processName: "", managerId: "", passQty: 0 };
+      }
+    } catch (err) {
+      console.error("작업지시서 상세 조회 실패:", err);
+    }
+  },
+);
+
+watch(
+  () => resultInfo.value.processName,
+  async (processName) => {
+    if (!processName) {
+      inspectionStandardList.value = [];
+      return;
+    }
+
+    try {
+      const res = await axios.get("/qualitys/inspectionStandard", {
+        params: { processName },
+      });
+      console.log("검사 기준 응답:", res.data); // ← 디버깅용
+      inspectionStandardList.value = res.data;
+    } catch (err) {
+      console.error("검사 기준 조회 실패:", err);
+      inspectionStandardList.value = [];
+    }
+  },
+);
 
 const evaluateResult = (item: any) => {
-  const value = item.insp_measured_value; 
+  const value = item.insp_measured_value;
 
-  if (value === null || value === undefined || value === '') {
-    item.insp_result = '판정대기';
+  if (value === null || value === undefined || value === "") {
+    item.insp_result = "판정대기";
     return;
   }
 
@@ -222,60 +228,60 @@ const evaluateResult = (item: any) => {
   const max = item.insp_value_max;
 
   if (value >= min && value <= max) {
-    item.insp_result = '합';
+    item.insp_result = "합";
   } else {
-    item.insp_result = '불합';
+    item.insp_result = "불합";
   }
-}
+};
 
 const submitForm = async () => {
   if (!form.value.productCode || !form.value.workOrderNo) {
-    alert('제품명과 작업지시서 번호를 선택하세요.');
+    alert("제품명과 작업지시서 번호를 선택하세요.");
     return;
   }
 
   const totalMeasured = inspectionStandardList.value
-    .map(item => item.insp_measured_value)
-    .filter(v => v !== null && v !== undefined);
-  
-  const averageMeasuredValue = totalMeasured.length > 0
-    ? totalMeasured.reduce((a, b) => a + b, 0) / totalMeasured.length
-    : null;
+    .map((item) => item.insp_measured_value)
+    .filter((v) => v !== null && v !== undefined);
+
+  const averageMeasuredValue =
+    totalMeasured.length > 0
+      ? totalMeasured.reduce((a, b) => a + b, 0) / totalMeasured.length
+      : null;
 
   if (averageMeasuredValue === null) {
-    alert('측정값을 입력해주세요.');
+    alert("측정값을 입력해주세요.");
     return;
   }
 
   // 불합일 경우 불합 사유가 비어있으면 return
-  if (finalResult.value === '불합' && !form.value.qualRemark) {
-    alert('불합 사유를 입력해주세요.');
+  if (finalResult.value === "불합" && !form.value.qualRemark) {
+    alert("불합 사유를 입력해주세요.");
     return;
   }
 
   try {
-    const res = await axios.post('/qualitys/registerTest', {
+    const res = await axios.post("/qualitys/registerTest", {
       productCode: form.value.productCode,
       workOrderNo: form.value.workOrderNo,
       qual_measured_value: averageMeasuredValue,
       qual_result: finalResult.value,
       process_name: resultInfo.value.processName,
-      pass_qty: finalResult.value === '합' ? resultInfo.value.passQty : 0,
-      qual_remark: finalResult.value === '불합' ? form.value.qualRemark : null
+      pass_qty: finalResult.value === "합" ? resultInfo.value.passQty : 0,
+      qual_remark: finalResult.value === "불합" ? form.value.qualRemark : null,
     });
 
     if (res.data.success) {
-      alert('검사 결과 등록 완료');
-      form.value.qualRemark = '';
+      alert("검사 결과 등록 완료");
+      form.value.qualRemark = "";
     } else {
-      alert('등록 실패');
+      alert("등록 실패");
     }
   } catch (err) {
-    console.error('등록 오류:', err);
-    alert('서버 오류로 등록 실패');
+    console.error("등록 오류:", err);
+    alert("서버 오류로 등록 실패");
   }
 };
-
 </script>
 
 <style scoped>

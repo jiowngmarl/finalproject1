@@ -1,4 +1,4 @@
- <template>
+<template>
   <div class="product-page">
     <div class="product-container">
       <div>
@@ -13,7 +13,11 @@
           <va-input v-model="form.occurDate" label="발생일자" type="date" />
           <va-input v-model="form.detail" label="상세설명" />
 
-          <va-radio-group v-model="form.judgment" row class="judgment-radio-group">
+          <va-radio-group
+            v-model="form.judgment"
+            row
+            class="judgment-radio-group"
+          >
             <va-radio label="폐기" name="click" value="delete" />
             <va-radio label="재포장" name="click" value="replace" />
             <va-radio label="대기" name="click" value="wait" />
@@ -30,18 +34,18 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { ref } from "vue";
 
 const form = ref({
-  name: '',
-  code: '',
-  processStage: '',
-  faultyType: '',
-  faultyQuantity: '',
-  occurDate: '',
-  detail: '',
-  judgment: '',
-})
+  name: "",
+  code: "",
+  processStage: "",
+  faultyType: "",
+  faultyQuantity: "",
+  occurDate: "",
+  detail: "",
+  judgment: "",
+});
 </script>
 
 <style scoped>
@@ -87,5 +91,4 @@ const form = ref({
   justify-content: center; /* 가운데 정렬 */
   margin-bottom: 0.5rem;
 }
-
 </style>

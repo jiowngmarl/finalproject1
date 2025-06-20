@@ -1,15 +1,19 @@
 <template>
-  <div class="popup-overlay" v-if="visible">
+  <div v-if="visible" class="popup-overlay">
     <div class="popup-content">
       <div class="popup-header">
         <h3>자재 선택</h3>
-        <input v-model="searchText" placeholder="자재코드 또는 자재명 검색" class="search-input" />
+        <input
+          v-model="searchText"
+          placeholder="자재코드 또는 자재명 검색"
+          class="search-input"
+        />
       </div>
 
       <table class="material-table">
         <thead>
           <tr>
-            <th></th>
+            <th />
             <th>자재코드</th>
             <th>자재명</th>
             <th>분류</th>
@@ -19,7 +23,13 @@
         </thead>
         <tbody>
           <tr v-for="item in filtered" :key="item.material_code">
-            <td><input type="checkbox" v-model="selectedCodes" :value="item.material_code" /></td>
+            <td>
+              <input
+                v-model="selectedCodes"
+                type="checkbox"
+                :value="item.material_code"
+              />
+            </td>
             <td>{{ item.material_code }}</td>
             <td>{{ item.material_name }}</td>
             <td>{{ item.material_cls }}</td>
@@ -31,40 +41,44 @@
 
       <div class="popup-footer">
         <button class="btn save" @click="addSelected">추가</button>
-        <button class="btn" @click="$emit('update:visible', false)">닫기</button>
+        <button class="btn" @click="$emit('update:visible', false)">
+          닫기
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, defineProps, defineEmits } from 'vue'
-import type { MaterialOption } from '@/types'
+import { ref, computed, defineProps, defineEmits } from "vue";
+import type { MaterialOption } from "@/types";
 
 const props = defineProps<{
-  visible: boolean
-  materials: MaterialOption[]
-}>()
+  visible: boolean;
+  materials: MaterialOption[];
+}>();
 
-const emit = defineEmits(['update:visible', 'add'])
+const emit = defineEmits(["update:visible", "add"]);
 
-const searchText = ref('')
-const selectedCodes = ref<string[]>([])
+const searchText = ref("");
+const selectedCodes = ref<string[]>([]);
 
 const filtered = computed(() => {
-  const keyword = searchText.value.trim().toLowerCase()
-  if (!keyword) return props.materials
+  const keyword = searchText.value.trim().toLowerCase();
+  if (!keyword) return props.materials;
   return props.materials.filter(
-    m =>
+    (m) =>
       m.material_code.toLowerCase().includes(keyword) ||
-      m.material_name.toLowerCase().includes(keyword)
-  )
-})
+      m.material_name.toLowerCase().includes(keyword),
+  );
+});
 
 function addSelected() {
-  const selected = props.materials.filter(m => selectedCodes.value.includes(m.material_code))
-  emit('add', selected)
-  emit('update:visible', false)
+  const selected = props.materials.filter((m) =>
+    selectedCodes.value.includes(m.material_code),
+  );
+  emit("add", selected);
+  emit("update:visible", false);
 }
 </script>
 
