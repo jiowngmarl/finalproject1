@@ -11,7 +11,8 @@ const selectProductList =
            product_stand,
            product_perdt,
            product_unit,
-           product_safty
+           product_safty,
+           product_packge
   FROM     product
   ORDER BY product_code`
   ;
@@ -26,15 +27,17 @@ const productInsert =
                       product_stand,
                       product_perdt,
                       product_safty,
-                      product_img)
-VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                      product_img,
+                      product_packge)
+VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 ;
 const productUpdate = `
   UPDATE product 
   SET 
     product_name = ?,product_pay = ?,product_atc = ?,
     product_gred = ?,product_unit = ?, product_stand = ?,
-    product_perdt = ?,product_safty = ?,product_img = ?
+    product_perdt = ?,product_safty = ?,product_img = ?,
+    product_packge = ? 
   WHERE product_code = ?
 `;
  const productDelete = 

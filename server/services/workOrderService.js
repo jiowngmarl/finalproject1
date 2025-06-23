@@ -188,7 +188,7 @@ const saveWorkOrderComplete = async (workOrderData) => {
           continue;
         }
 
-        const processCodes = await getProcessCodesByGroup(product.process_group_code);
+        const processCodes = await getProcessCodesByGroup(product.process_group_code, product.process_seq);
         if (Array.isArray(processCodes) && processCodes.length > 0) {
           await saveWorkResultDetails(resultId, processCodes);
         }
@@ -225,6 +225,7 @@ const saveWorkResultDetails = async (resultId, processCodes) => {
       const insertData = [
         resultId,
         process.process_code,
+        process.process_seq,
         process.code_value
       ];
       await mariadb.query('insertResultDetail', insertData);
