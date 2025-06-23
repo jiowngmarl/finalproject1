@@ -83,13 +83,7 @@
         >
           삭제
         </va-button>
-        <va-button 
-          preset="secondary"
-          icon="download"
-          @click="exportExcel"
-        >
-          엑셀
-        </va-button>
+        
       </div>
 
       <!-- 권한 없는 사용자를 위한 메시지 -->
@@ -797,6 +791,7 @@ watch(itemsPerPage, () => {
   display: flex;
   gap: 8px;
   margin-bottom: 16px;
+  justify-content: right;
 }
 
 /* 테이블 */
