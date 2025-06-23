@@ -337,110 +337,6 @@ class PackageService {
         }
     }
 
-    // 새 작업번호 생성 (실제 제품명 적용)
-    async createNewWorkOrder(제품코드, lineId) {
-        try {
-            console.log(`새 작업번호 생성 (실제 제품명 적용): 제품=${제품코드}, 라인=${lineId}`);
-            
-            const now = new Date();
-            const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-            const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '');
-            
-            const resultId = `RE${dateStr}${timeStr}`;
-            const workOrderNo = `WO${dateStr}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-            const 공정코드 = lineId.includes('내포장') || lineId.includes('INNER') ? 'p3' : 'p5';
-            const processGroupCode = `${제품코드}-Process`;
-            
-            // 실제 제품명 가져오기
-            const realProductName = this.getProductNameFromCode(제품코드);
-            console.log(`제품코드 ${제품코드} -> 실제 제품명: ${realProductName}`);
-            
-            // 안전한 범위 내 정수 생성
-            const baseNumber = 1000000;
-            const randomNumber = Math.floor(Math.random() * 1000000000);
-            const resultDetailId = baseNumber + randomNumber;
-            
-            // 기본 작업자 ID (employees 테이블에서 조회)
-            let defaultEmployeeId = 2;
-            let defaultEmployeeName = '김홍인';
-            
-            try {
-                const employeeResult = await this.executeRawQuery(`
-                    SELECT employee_id, employee_name 
-                    FROM tablets.employees 
-                    WHERE position LIKE '%작업자%' 
-                    LIMIT 1
-                `);
-                
-                if (employeeResult.length > 0) {
-                    defaultEmployeeId = employeeResult[0].employee_id;
-                    defaultEmployeeName = employeeResult[0].employee_name;
-                    console.log(`기본 작업자 설정: ${defaultEmployeeName} (ID: ${defaultEmployeeId})`);
-                }
-            } catch (empError) {
-                console.log('기본 작업자 조회 실패, 기본값 사용:', empError.message);
-            }
-            
-            console.log(`생성할 작업번호: ${workOrderNo}, 실적ID: ${resultId}, 공정코드: ${공정코드}`);
-            console.log(`작업자: ${defaultEmployeeName} (ID: ${defaultEmployeeId})`);
-            console.log(`제품명: ${realProductName}`);
-            
-            // INT(11) 범위 확인
-            if (resultDetailId > 2147483647) {
-                const safeId = Math.floor(Math.random() * 1000000000) + 1000000;
-                console.log(`범위 초과로 재생성: ${safeId}`);
-                return await this.createNewWorkOrder(제품코드, lineId);
-            }
-            
-            // 1. work_order_master 생성 (실제 작업자 ID)
-            await this.executeRawQuery(`
-                INSERT INTO tablets.work_order_master (
-                    work_order_no, plan_id, writer_id, write_date, 
-                    order_start_dt, order_end_dt, order_remark
-                ) VALUES (?, ?, ?, NOW(), NOW(), DATE_ADD(NOW(), INTERVAL 1 DAY), ?)
-            `, [workOrderNo, 제품코드, defaultEmployeeId, `${공정코드} 작업 자동 생성`]);
-            
-            // 2. work_result 생성
-            await this.executeRawQuery(`
-                INSERT INTO tablets.work_result (
-                    result_id, work_order_no, process_group_code, result_remark, 
-                    code_value, work_start_date, work_end_date
-                ) VALUES (?, ?, ?, ?, 'waiting', NOW(), NULL)
-            `, [resultId, workOrderNo, processGroupCode, `${공정코드} 실적 자동 생성`]);
-            
-            // 3. work_result_detail 생성 (실제 작업자 ID를 d + employee_id 형태로 저장)
-            await this.executeRawQuery(`
-                INSERT INTO tablets.work_result_detail (
-                    result_detail, result_id, process_code, code_value, 
-                    work_start_time, pass_qty, process_defective_qty, 
-                    manager_id, eq_type_code
-                ) VALUES (?, ?, ?, 'waiting', NOW(), 1000, '0', ?, 'i8')
-            `, [resultDetailId, resultId, 공정코드, `d${defaultEmployeeId}`]);
-            
-            console.log(`새 작업 생성 완료 (실제 제품명 적용): ${workOrderNo}`);
-            
-            return {
-                work_order_no: workOrderNo,
-                work_id: workOrderNo,
-                result_detail_id: resultDetailId,
-                result_id: resultId,
-                step_status: 'READY',
-                input_qty: 1000,
-                output_qty: 0,
-                product_name: realProductName,           // 실제 제품명 사용
-                final_product_name: realProductName,     // 실제 제품명 사용
-                employee_name: defaultEmployeeName,
-                employee_id: defaultEmployeeId,
-                product_code: 제품코드,
-                process_code: 공정코드
-            };
-            
-        } catch (error) {
-            console.error('새 작업번호 생성 실패 (실제 제품명 적용):', error);
-            throw error;
-        }
-    }
-
     // 내포장 라인별 작업번호 조회 (실제 제품명 적용)
     async getInnerWorkByLine(lineId, lineName) {
         try {
@@ -452,36 +348,34 @@ class PackageService {
             console.log(`추출된 제품코드: ${productCode}`);
             
             // employees 테이블 조인으로 내포장 작업 조회
-            const result = await this.executeRawQuery(`
-                SELECT 
-                    wom.work_order_no as 작업번호,
-                    wom.plan_id as 제품코드,
-                    COALESCE(p.product_name, '제품명없음') as 제품명,
-                    wrd.code_value as 진행상태,
-                    wrd.pass_qty as input_qty,
-                    0 as output_qty,
-                    COALESCE(emp.employee_name, '작업자') as employee_name,
-                    COALESCE(emp.employee_id, 2) as employee_id,
-                    COALESCE(emp.position, '작업자') as position,
-                    COALESCE(emp.department_code, '포장부') as department_code,
-                    wrd.manager_id,
-                    ? as line_id,
-                    ? as line_name,
-                    wrd.result_detail,
-                    wr.result_id,
-                    '내포장' as step_name,
-                    'READY' as step_status
-                FROM tablets.work_order_master wom
-                JOIN tablets.work_result wr ON wom.work_order_no = wr.work_order_no
-                JOIN tablets.work_result_detail wrd ON wr.result_id = wrd.result_id
-                LEFT JOIN tablets.product p ON wom.plan_id = p.product_code
-                LEFT JOIN tablets.employees emp ON CAST(REPLACE(wrd.manager_id, 'd', '') AS UNSIGNED) = emp.employee_id
-                WHERE wrd.process_code = 'p3'
-                AND wrd.code_value IN ('waiting', 'ready', '대기', '준비')
-                AND (wom.plan_id LIKE ? OR p.product_name LIKE ?)
-                ORDER BY wom.order_start_dt ASC
-                LIMIT 1
-            `, [lineId, lineName, `%${productCode}%`, `%${productCode}%`]);
+            // -1) 해당 제품코드의 공정흐름도 정보 가져오기
+            const getProcesxsInfo = await this.executeRawQuery(`
+                SELECT process_group_code, process_seq, process_code
+                FROM process
+                HERE process_group_code = (SELECT process_group_code FROM tablets.process_group WHERE product_code = ?)
+                AND process_int = (SELECT process_int FROM process_it WHERE process_name = '포장')
+            `, [`%${productCode}%`]);
+
+            // -2) 작업실적테이블에서 진행중인 실적 가져오기
+            const getWorinMaster = await this.executeRawQuery(`
+                SELECT rm.result_id
+                FROM work_result rm 
+                JOIN work_result_detail rd
+                  ON rm.result_id = rd.result_id
+                WHERE rm.process_group_code = ? -- 1) process_group_code
+                AND rd.process_seq = ?-1 -- 2) process_seq
+                AND rd.code_value = 'p5'`, 
+                [getProcesxsInfo[0].process_group_code, getProcesxsInfo[0].process_seq]);
+
+            // -3) 작업실적상세테이블에서 작업번호 가져오기
+            const getWorkDetail = await this.executeRawQuery(`
+                SELECT result_detail
+                FROM work_result_detail
+                WHERE result_id = ? -- 2) result_id
+                AND process_seq = ?
+                AND code_value = 'p1'`, 
+                [getWorinMaster[0].result_id, getProcesxsInfo[0].process_seq]); 
+
             
             if (result.length > 0) {
                 const work = result[0];
@@ -493,7 +387,8 @@ class PackageService {
                 return {
                     work_order_no: work.작업번호,
                     work_id: work.작업번호,
-                    result_detail_id: work.result_detail,
+                    //result_detail_id: work.result_detail,
+                    result_detail_id : getWorkDetail[0].result_detail,
                     result_id: work.result_id,
                     step_status: work.step_status,
                     input_qty: work.input_qty || 1000,

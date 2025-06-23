@@ -207,7 +207,6 @@
           <div class="line-header">
             <h3 class="line-name">{{ line.line_name }}</h3>
             <div v-if="isRecommendedLine(line)" class="recommended-badge">
-              추천
             </div>
           </div>
           
@@ -621,8 +620,7 @@ function isRecommendedLine(line) {
   if (selectedPackageType.value === 'OUTER' && completedSteps.value.includes('INNER')) {
     // 외포장 시 특정 조건의 라인을 추천
     return line.line_state === 's2' && 
-           line.line_type === 'OUTER' && 
-           (line.line_name.includes('A') || line.line_name.includes('1'))
+           line.line_type === 'OUTER'
   }
   return false
 }

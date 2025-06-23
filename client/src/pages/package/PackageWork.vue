@@ -83,10 +83,10 @@
                     <!-- 실제 DB에서 조회된 작업번호 표시 (실제 제품명 적용) -->
                     <option 
                       v-if="availableWork" 
-                      :value="availableWork.work_order_no || availableWork.work_id"
+                      :value="availableWork.result_detail_id"
                       class="available-option"
                     >
-                      {{ availableWork.work_order_no || availableWork.work_id || '작업번호없음' }} - 
+                      {{ availableWork.result_detail_id || '작업번호없음' }} - 
                       {{ getDisplayProductName(availableWork) }}
                     </option>
                   </select>
@@ -350,7 +350,7 @@
               </div>
               <div class="info-row">
                 <span class="info-label">작업번호</span>
-                <span class="info-value">{{ currentWork.work_order_no || currentWork.work_id || '-' }}</span>
+                <span class="info-value">{{ currentWork.result_detail_id || '-' }}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">제품명</span>
@@ -818,7 +818,7 @@ const extractedProductCode = computed(() => {
 const workflowInfo = ref({
   step: route.query.workflow_step || null,
   innerCompleted: route.query.inner_completed === 'true',
-  innerWorkNo: route.query.inner_work_order_no || '',
+  innerWorkNo: route.query.inner_result_detail_id || '',
   innerCompletionTime: route.query.inner_completion_time ? new Date(route.query.inner_completion_time) : null,
   innerOutputQty: parseInt(route.query.inner_output_qty) || 0,
   autoStartGuide: route.query.auto_start_guide === 'true'
@@ -979,7 +979,7 @@ onMounted(async () => {
       await onWorkOrderChange()
     } else if (availableWork.value) {
       // 자동 작업번호 선택
-      selectedWorkOrder.value = availableWork.value.work_order_no || availableWork.value.work_id
+      selectedWorkOrder.value = availableWork.value.result_detail_id
       await onWorkOrderChange()
     }
     
@@ -1231,7 +1231,7 @@ async function loadWorkflowData() {
     // 데이터 적용
     if (innerData && innerData.pass_qty > 0) {
       workflowInfo.value.innerCompleted = true
-      workflowInfo.value.innerWorkNo = innerData.work_order_no
+      workflowInfo.value.innerWorkNo = innerData.result_detail_id
       workflowInfo.value.innerOutputQty = innerData.pass_qty
       workflowInfo.value.innerCompletionTime = new Date(innerData.work_end_time || innerData.completion_time)
       workflowInfo.value.step = 'OUTER'
@@ -1418,7 +1418,7 @@ async function confirmCompleteWork() {
         await updateWorkResultDetailStatus('completed')
         
         addLog('내포장 완료 처리:', 'success')
-        addLog('- work_result_detail.work_end_time 업데이트 완료', 'info')
+        addLog('- work_result_detail.work_start_time 업데이트 완료', 'info')
         addLog('- work_result_detail.code_value = "completed"', 'info')
         addLog('- DB 업데이트 성공', 'success')
         
@@ -1496,7 +1496,7 @@ async function processInnerToOuterWorkflow() {
     if (!window.workflowData) window.workflowData = {}
     const workflowKey = `workflow_${baseLineName.replace(/\s+/g, '_')}`
     window.workflowData[workflowKey] = {
-      inner_work_order_no: currentWork.value.work_order_no || currentWork.value.work_id,
+      inner_work_order_no: currentWork.value.result_detail_id,
       inner_output_qty: currentWork.value.output_qty,
       inner_completion_time: new Date().toISOString(),
       completion_type: 'complete'
@@ -1516,12 +1516,12 @@ function startDirectTransitionToOuter() {
   
   const queryParams = {
     inner_completed: 'true',
-    inner_work_order_no: currentWork.value.work_order_no || currentWork.value.work_id,
+    inner_work_order_no: currentWork.value.result_detail_id,
     inner_output_qty: currentWork.value.output_qty,
     inner_completion_time: new Date().toISOString(),
     auto_start_guide: 'true',
     workflow_type: 'direct_transition',
-    message: `내포장 작업(${currentWork.value.work_order_no || currentWork.value.work_id})이 완료되었습니다. 완료수량 ${formatNumber(currentWork.value.output_qty)}개를 외포장에 투입하세요.`,
+    message: `내포장 작업(${currentWork.value.result_detail_id})이 완료되었습니다. 완료수량 ${formatNumber(currentWork.value.output_qty)}개를 외포장에 투입하세요.`,
     success_message: '내포장 작업이 성공적으로 완료되었습니다!'
   }
   
@@ -1570,20 +1570,20 @@ function startAutoTransitionToLineSelection() {
       if (workInfo.value.lineType === 'INNER') {
         queryParams = {
           inner_completed: 'true',
-          prev_work: currentWork.value.work_order_no || currentWork.value.work_id,
-          inner_work_order_no: currentWork.value.work_order_no || currentWork.value.work_id,
+          prev_work: currentWork.value.result_detail_id,
+          inner_work_order_no: currentWork.value.result_detail_id,
           inner_output_qty: currentWork.value.output_qty,
           inner_completion_time: new Date().toISOString(),
           auto_start_guide: 'true',
-          message: `내포장 작업(${currentWork.value.work_order_no || currentWork.value.work_id})이 완료되었습니다. 완료수량 ${formatNumber(currentWork.value.output_qty)}개를 외포장에 투입하세요.`,
+          message: `내포장 작업(${currentWork.value.result_detail_id})이 완료되었습니다. 완료수량 ${formatNumber(currentWork.value.output_qty)}개를 외포장에 투입하세요.`,
           success_message: '내포장 작업이 성공적으로 완료되었습니다!'
         }
       } else {
         queryParams = {
           outer_completed: 'true',
-          prev_work: currentWork.value.work_order_no || currentWork.value.work_id,
+          prev_work: currentWork.value.result_detail_id,
           prev_inner_work: workflowInfo.value.innerWorkNo,
-          message: `모든 포장 작업이 완료되었습니다! 내포장(${workflowInfo.value.innerWorkNo}) + 외포장(${currentWork.value.work_order_no || currentWork.value.work_id})`,
+          message: `모든 포장 작업이 완료되었습니다! 내포장(${workflowInfo.value.innerWorkNo}) + 외포장(${currentWork.value.result_detail_id})`,
           success_message: '전체 포장 프로세스가 성공적으로 완료되었습니다!'
         }
       }
@@ -1637,12 +1637,12 @@ async function refreshWorkOrders() {
         await onWorkOrderChange()
         addLog(`이전 작업(${currentSelectedWork})을 복원했습니다.`, 'success')
       } else {
-        selectedWorkOrder.value = availableWork.value.work_order_no || availableWork.value.work_id
+        selectedWorkOrder.value = availableWork.value.result_detail_id
         await onWorkOrderChange()
         addLog(`이전 작업을 찾을 수 없어 새 작업을 선택했습니다.`, 'warning')
       }
     } else if (availableWork.value) {
-      selectedWorkOrder.value = availableWork.value.work_order_no || availableWork.value.work_id
+      selectedWorkOrder.value = availableWork.value.result_detail_id
       await onWorkOrderChange()
     }
     
@@ -1919,7 +1919,7 @@ async function retryConnection() {
 async function updateWorkResultDetailStatus(status) {
   try {
     const response = await axios.post('/packages/workflow/start-inner', {
-      work_order_no: currentWork.value.work_order_no,
+      work_order_no: currentWork.value.result_detail_id,
       product_code: currentWork.value.product_code,
       process_group_code: processFlowResult.value.processGroupCode
     }, {
@@ -1942,7 +1942,7 @@ async function updateWorkResultDetailStatus(status) {
 async function updateWorkResultDetailStartTime(startTime) {
   try {
     const response = await axios.put('/packages/workflow/update-start-time', {
-      work_order_no: currentWork.value.work_order_no,
+      work_order_no: currentWork.value.result_detail_id,
       start_time: startTime,
       result_detail_id: currentWork.value.result_detail_id
     }, {
@@ -1965,7 +1965,7 @@ async function updateWorkResultDetailStartTime(startTime) {
 async function updateWorkResultDetailEndTime(endTime) {
   try {
     const response = await axios.put('/packages/workflow/update-end-time', {
-      work_order_no: currentWork.value.work_order_no,
+      work_order_no: currentWork.value.result_detail_id,
       end_time: endTime,
       result_detail_id: currentWork.value.result_detail_id,
       pass_qty: currentWork.value.output_qty,

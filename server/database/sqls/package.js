@@ -44,7 +44,7 @@ module.exports = {
   selectWaitingWorkNumber: `
     SELECT 
       wom.work_order_no as 작업번호,
-      wrd.result_detail,
+      wrd.result_detail as 작업상세,
       wrd.process_code as 공정코드,
       wrd.code_value as 진행상태,
       wr.result_id as 실적ID,
@@ -67,7 +67,7 @@ module.exports = {
   // 2-4) 작업시작 시 - 내포장시 진행상태를 진행으로 업데이트
   startInnerPackaging: `
     UPDATE tablets.work_result_detail wrd
-    JOIN tablets.work_result wr ON wrd.result_id = wr.result_id
+    JOIN tablets.work_result wr ON wrd.result[_id = wr.result_id
     JOIN tablets.work_order_master wom ON wr.work_order_no = wom.work_order_no
     SET 
       wrd.code_value = 'in_progress',
@@ -141,36 +141,7 @@ module.exports = {
     WHERE wom.work_order_no = ?
     AND wrd.process_code = 'p5'
   `,
-
-  // ========== 새 작업 생성 쿼리 ==========
-
-  // 새 work_order_master 생성
-  createNewWorkOrderMaster: `
-    INSERT INTO tablets.work_order_master (
-      work_order_no, plan_id, writer_id, write_date, 
-      order_start_dt, order_end_dt, order_remark
-    ) VALUES (?, ?, 2, NOW(), NOW(), DATE_ADD(NOW(), INTERVAL 1 DAY), ?)
-  `,
-
-  // 새 work_result 생성
-  createNewWorkResult: `
-    INSERT INTO tablets.work_result (
-      result_id, work_order_no, process_group_code, result_remark, 
-      code_value, work_start_date, work_end_date
-    ) VALUES (?, ?, ?, ?, 'waiting', NOW(), NULL)
-  `,
-
-  // 새 work_result_detail 생성 (활성 직원 자동 할당)
-  createNewWorkResultDetail: `
-    INSERT INTO tablets.work_result_detail (
-      result_detail, result_id, process_code, code_value, 
-      work_start_time, pass_qty, process_defective_qty, 
-      manager_id, eq_type_code
-    ) VALUES (?, ?, ?, 'waiting', NOW(), ?, '0', 
-      (SELECT employee_id FROM tablets.employees WHERE employment_status = 'ACTIVE' LIMIT 1), 
-      'i8')
-  `,
-
+  
   // 기존 실적에 외포장 단계 추가 (활성 직원 자동 할당)
   addOuterPackagingStep: `
     INSERT INTO tablets.work_result_detail (

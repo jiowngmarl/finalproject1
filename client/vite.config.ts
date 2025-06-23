@@ -4,6 +4,7 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'url'
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import { vuestic } from '@vuestic/compiler/vite'
+import vueDevTools from 'vite-plugin-vue-devtools'
 
 // ✅ 중복 프록시 설정 경로 배열
 const proxyPaths = [
@@ -88,7 +89,8 @@ export default defineConfig({
     vue(),
     VueI18nPlugin({
       include: resolve(dirname(fileURLToPath(import.meta.url)), './src/i18n/locales/**')
-    })
+    }),
+    vueDevTools()
   ]
 })
   
