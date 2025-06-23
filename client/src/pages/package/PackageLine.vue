@@ -486,40 +486,70 @@ onBeforeMount(() => {
 })
 
 // 컴포넌트 마운트 시 라인 목록 로드
-onMounted(() => {
+onMounted(async () => {
   console.log('컴포넌트 마운트 - 라인 목록 로드 시작')
+  
+  // 현재 사용자 정보 먼저 로드
+  await loadCurrentEmployee()
+  
+  // 라인 목록 로드
   fetchLines()
 })
 
-// ====== API 함수들 ======
-
-// 현재 로그인한 사용자 정보 로드 (에러 방지 버전)
+// 현재 로그인한 사용자 정보 로드 (개선된 버전)
 async function loadCurrentEmployee() {
   try {
     console.log('현재 사용자 정보 로드 시작...')
-    const response = await axios.get('/lines/current-employee')
     
-    if (response.data && response.data.success) {
-      currentEmployee.value = response.data.data
-      console.log('현재 사용자 정보 로드 성공:', currentEmployee.value)
-    } else {
-      throw new Error(response.data?.message || 'API 응답 오류')
+    // 여러 방법으로 사용자 정보 시도
+    let userInfo = null
+    
+    // 방법 1: API 호출
+    try {
+      const response = await axios.get('/lines/current-employee')
+      if (response.data && response.data.success) {
+        userInfo = response.data.data
+        console.log('API에서 사용자 정보 로드 성공:', userInfo)
+      }
+    } catch (apiError) {
+      console.log('API 호출 실패, 대안 방법 시도:', apiError.message)
     }
-  } catch (error) {
-    console.error('현재 사용자 정보 로드 실패:', error)
     
-    //  기본 사용자 정보로 대체 (에러 방지)
+    // 방법 2: 세션/로컬스토리지 확인
+    if (!userInfo) {
+      const storedUser = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser')
+      if (storedUser) {
+        try {
+          userInfo = JSON.parse(storedUser)
+          console.log('저장된 사용자 정보 사용:', userInfo)
+        } catch (parseError) {
+          console.log('저장된 사용자 정보 파싱 실패')
+        }
+      }
+    }
+    
+    // 방법 3: 기본값 설정
+    if (!userInfo) {
+      userInfo = { 
+        employee_name: '김홍인', 
+        employee_id: 2,
+        department: '포장부',
+        position: '작업자'
+      }
+      console.log('기본 사용자 정보 사용:', userInfo)
+    }
+    
+    currentEmployee.value = userInfo
+    
+  } catch (error) {
+    console.error('사용자 정보 로드 실패:', error)
+    
+    // 최종 기본값
     currentEmployee.value = { 
       employee_name: '김홍인', 
-      employee_id: 2 
-    }
-    
-    if (error.response?.status === 401) {
-      console.warn('로그인이 필요합니다. 기본 사용자로 진행합니다.')
-    } else if (error.code === 'ERR_NETWORK') {
-      console.warn('API 서버에 연결할 수 없습니다. 기본값을 사용합니다.')
-    } else {
-      console.warn('사용자 정보를 불러올 수 없어 기본값을 사용합니다.')
+      employee_id: 2,
+      department: '포장부',
+      position: '작업자'
     }
   }
 }
@@ -651,28 +681,42 @@ async function confirmStartWork() {
   }
 }
 
-//  작업 수행 페이지로 이동 (워크플로우 상태 전달)
+// navigateToWorkPage 수정 - 사용자 정보 확실히 전달
 function navigateToWorkPage(line) {
   console.log('작업 페이지로 이동:', line)
+  console.log('현재 사용자 정보:', currentEmployee.value)
   
   const queryParams = {
     line_id: line.line_id,
     line_name: line.line_name,
     line_type: line.line_type,
+    product_code: line.product_code,
+    product_name: line.product_name,
     work_no: line.curr_work_no || '',
     return_to: 'package_line',
     current_package_type: selectedPackageType.value,
-    employee_id: currentEmployee.value?.employee_id || '',
-    employee_name: currentEmployee.value?.employee_name || ''
+    
+    // ✅ 현재 사용자 정보 확실히 전달
+    employee_id: currentEmployee.value?.employee_id || 2,
+    employee_name: currentEmployee.value?.employee_name || '김홍인',
+    employee_department: currentEmployee.value?.department || '포장부',
+    employee_position: currentEmployee.value?.position || '작업자'
   }
   
-  //  워크플로우 상태 정보 추가
+  console.log('전달할 사용자 정보:', {
+    employee_id: queryParams.employee_id,
+    employee_name: queryParams.employee_name,
+    employee_department: queryParams.employee_department,
+    employee_position: queryParams.employee_position
+  })
+  
+  // 워크플로우 상태 정보 추가
   if (selectedPackageType.value === 'OUTER' && completedSteps.value.includes('INNER')) {
     queryParams.workflow_step = 'OUTER'
     queryParams.inner_completed = 'true'
     queryParams.inner_work_no = innerWorkNo.value
     queryParams.inner_completion_time = innerCompletionTime.value?.toISOString()
-    queryParams.auto_start_guide = 'true' // 외포장 자동 안내 활성화
+    queryParams.auto_start_guide = 'true'
   } else if (selectedPackageType.value === 'INNER') {
     queryParams.workflow_step = 'INNER'
     queryParams.next_step = 'OUTER'
@@ -686,7 +730,6 @@ function navigateToWorkPage(line) {
     console.log('작업 페이지로 이동 성공')
   } catch (routerError) {
     console.error('라우터 이동 실패:', routerError)
-    
     const params = new URLSearchParams(queryParams)
     window.location.href = `/packaging/work?${params.toString()}`
   }

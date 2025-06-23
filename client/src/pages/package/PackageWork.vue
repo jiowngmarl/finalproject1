@@ -83,10 +83,10 @@
                     <!-- 실제 DB에서 조회된 작업번호 표시 (실제 제품명 적용) -->
                     <option 
                       v-if="availableWork" 
-                      :value="availableWork.result_detail_id"
+                      :value="availableWork.result_detail"
                       class="available-option"
                     >
-                      {{ availableWork.result_detail_id || '작업번호없음' }} - 
+                      {{ availableWork.result_detail || '작업번호없음' }} - 
                       {{ getDisplayProductName(availableWork) }}
                     </option>
                   </select>
@@ -350,7 +350,7 @@
               </div>
               <div class="info-row">
                 <span class="info-label">작업번호</span>
-                <span class="info-value">{{ currentWork.result_detail_id || '-' }}</span>
+                <span class="info-value">{{ currentWork.result_detail || '-' }}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">제품명</span>
@@ -676,21 +676,47 @@ function getProductNameFromCode(productCode) {
 }
 
 // 작업번호 드롭다운 표시용 제품명 가져오기
+// 작업번호 드롭다운 표시용 제품명 가져오기 (우선순위 적용)
 function getDisplayProductName(workData) {
   if (!workData) return '제품명 없음'
   
-  // 1. DB에서 가져온 실제 제품명 우선 사용 (하드코딩 방지)
-  if (workData.product_name && !workData.product_name.includes('제품') && !workData.product_name.includes('-')) {
-    return workData.product_name
+  console.log('getDisplayProductName 호출:', workData)
+  
+  let productName = null
+  
+  // 1순위: URL에서 전달받은 제품명 (가장 신뢰도 높음)
+  if (route.query.product_name && 
+      !route.query.product_name.includes('제품') && 
+      !route.query.product_name.includes('-')) {
+    productName = route.query.product_name
+    console.log('드롭다운 제품명: URL 파라미터 사용 =', productName)
+    return productName
   }
   
-  if (workData.final_product_name && !workData.final_product_name.includes('제품') && !workData.final_product_name.includes('-')) {
-    return workData.final_product_name
+  // 2순위: DB에서 가져온 실제 제품명 우선 사용 (하드코딩 방지)
+  if (workData.product_name && 
+      !workData.product_name.includes('제품') && 
+      !workData.product_name.includes('-')) {
+    productName = workData.product_name
+    console.log('드롭다운 제품명: DB product_name 사용 =', productName)
+    return productName
   }
   
-  // 2. 제품코드에서 실제 제품명 변환
+  // 3순위: final_product_name 사용
+  if (workData.final_product_name && 
+      !workData.final_product_name.includes('제품') && 
+      !workData.final_product_name.includes('-')) {
+    productName = workData.final_product_name
+    console.log('드롭다운 제품명: DB final_product_name 사용 =', productName)
+    return productName
+  }
+  
+  // 4순위: 제품코드에서 실제 제품명 변환
   const productCode = workData.product_code || extractedProductCode.value
-  return getProductNameFromCode(productCode)
+  productName = getProductNameFromCode(productCode)
+  console.log('드롭다운 제품명: 제품코드 변환 =', productName, '(코드:', productCode, ')')
+  
+  return productName
 }
 
 // 제품코드 추출 (완전한 매핑 로직 적용)
@@ -1256,7 +1282,7 @@ async function loadWorkflowData() {
   }
 }
 
-// 작업번호 변경 시 (실제 제품명 적용)
+// 작업번호 변경 시 (제품명 우선순위 적용)
 async function onWorkOrderChange() {
   if (!selectedWorkOrder.value || !availableWork.value) {
     resetCurrentWork()
@@ -1270,18 +1296,63 @@ async function onWorkOrderChange() {
     console.log(`선택된 작업번호: ${selectedWorkOrder.value}`)
     console.log('availableWork 원본 데이터:', availableWork.value)
     
-    // 제품코드에서 실제 제품명 변환
-    const productCode = availableWork.value.product_code || extractedProductCode.value
-    const realProductName = getProductNameFromCode(productCode)
+    // 제품코드 결정 (URL 파라미터 → DB → 라인명 추출 순서)
+    const productCode = route.query.product_code || 
+                       availableWork.value.product_code || 
+                       extractedProductCode.value
     
-    // availableWork에서 직접 매핑 (실제 제품명 사용)
-    currentWork.value = {
-      work_order_no: availableWork.value.work_order_no || availableWork.value.work_id,
-      work_id: availableWork.value.work_id,
-      result_detail_id: availableWork.value.result_detail_id,
-      product_name: availableWork.value.product_name && !availableWork.value.product_name.includes('제품') ? availableWork.value.product_name : realProductName,
-      final_product_name: availableWork.value.final_product_name && !availableWork.value.final_product_name.includes('제품') ? availableWork.value.final_product_name : realProductName,
+    // 제품명 결정 (다단계 우선순위 적용)
+    let productName = null
+    
+    // 1순위: URL에서 전달받은 제품명 (가장 신뢰도 높음)
+    if (route.query.product_name && 
+        !route.query.product_name.includes('제품') && 
+        !route.query.product_name.includes('-')) {
+      productName = route.query.product_name
+      console.log('제품명 결정: URL 파라미터 사용 =', productName)
+    }
+    
+    // 2순위: DB에서 가져온 제품명 (유효성 검사 후)
+    else if (availableWork.value.product_name && 
+             !availableWork.value.product_name.includes('제품') && 
+             !availableWork.value.product_name.includes('-')) {
+      productName = availableWork.value.product_name
+      console.log('제품명 결정: DB 데이터 사용 =', productName)
+    }
+    
+    // 3순위: final_product_name (보조 DB 필드)
+    else if (availableWork.value.final_product_name && 
+             !availableWork.value.final_product_name.includes('제품') && 
+             !availableWork.value.final_product_name.includes('-')) {
+      productName = availableWork.value.final_product_name
+      console.log('제품명 결정: final_product_name 사용 =', productName)
+    }
+    
+    // 4순위: 제품코드에서 변환 (최후 수단)
+    else {
+      productName = getProductNameFromCode(productCode)
+      console.log('제품명 결정: 제품코드 변환 =', productName, '(코드:', productCode, ')')
+    }
+    
+    console.log('최종 제품 정보:', {
       product_code: productCode,
+      product_name: productName,
+      source: {
+        url_product_name: route.query.product_name,
+        db_product_name: availableWork.value.product_name,
+        db_final_product_name: availableWork.value.final_product_name,
+        code_converted: getProductNameFromCode(productCode)
+      }
+    })
+    
+    // availableWork에서 직접 매핑 (제품명 우선순위 적용)
+    currentWork.value = {
+      result_detail: availableWork.value.result_detail,
+      result_detail_id: availableWork.value.result_detail,
+      result_id: availableWork.value.result_id,
+      product_name: productName,                           // ✅ 우선순위 적용된 제품명
+      final_product_name: productName,                     // ✅ 동일하게 설정
+      product_code: productCode,                           // ✅ 우선순위 적용된 제품코드
       target_quantity: availableWork.value.input_qty || availableWork.value.target_qty || 1000,
       current_quantity: availableWork.value.output_qty || 0,
       remaining_quantity: (availableWork.value.input_qty || availableWork.value.target_qty || 1000) - (availableWork.value.output_qty || 0),
@@ -1306,8 +1377,12 @@ async function onWorkOrderChange() {
       eq_type_code: 'i8'
     }
     
-    console.log('currentWork 객체로 변환 완료:', currentWork.value)
-    console.log(`실제 제품명 적용: ${realProductName}`)
+    console.log('currentWork 객체로 변환 완료:', {
+      result_detail: currentWork.value.result_detail,
+      product_code: currentWork.value.product_code,
+      product_name: currentWork.value.product_name,
+      final_product_name: currentWork.value.final_product_name
+    })
     
     // 외포장 워크플로우 연계
     if (workInfo.value.lineType === 'OUTER' && workflowInfo.value.innerCompleted && workflowInfo.value.innerOutputQty > 0) {
@@ -1319,11 +1394,11 @@ async function onWorkOrderChange() {
     
     updateCurrentWorkInfo()
     addLog(`작업번호 ${selectedWorkOrder.value} 정보를 불러왔습니다.`, 'success')
-    addLog(`제품명: ${realProductName} (코드: ${productCode})`, 'info')
-    addLog(`데이터 소스: work_order_master + work_result_detail`, 'success')
+    addLog(`제품정보: ${productName} (코드: ${productCode})`, 'info')
+    addLog(`데이터소스: URL파라미터 + work_order_master + work_result_detail`, 'success')
     
-    if (currentWork.value.result_detail_id) {
-      addLog(`실적 연동 활성화: ${currentWork.value.result_detail_id}`, 'success')
+    if (currentWork.value.result_detail) {
+      addLog(`실적 연동 활성화: ${currentWork.value.result_detail}`, 'success')
     }
     
   } catch (error) {
@@ -1919,7 +1994,7 @@ async function retryConnection() {
 async function updateWorkResultDetailStatus(status) {
   try {
     const response = await axios.post('/packages/workflow/start-inner', {
-      work_order_no: currentWork.value.result_detail_id,
+      result_detail: currentWork.value.result_detail,
       product_code: currentWork.value.product_code,
       process_group_code: processFlowResult.value.processGroupCode
     }, {
