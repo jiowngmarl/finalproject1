@@ -108,21 +108,12 @@
                     </option>
 
                     <!-- 실제 DB에서 조회된 작업번호 표시 (실제 제품명 적용) -->
-<<<<<<< HEAD
-                    <option 
-                      v-if="availableWork" 
-                      :value="availableWork.result_detail"
-                      class="available-option"
-                    >
-                      {{ availableWork.result_detail || '작업번호없음' }} - 
-=======
                     <option
                       v-if="availableWork"
                       :value="availableWork.result_detail"
                       class="available-option"
                     >
                       {{ availableWork.result_detail || "작업번호없음" }} -
->>>>>>> main
                       {{ getDisplayProductName(availableWork) }}
                     </option>
                   </select>

@@ -1,6 +1,6 @@
 <template>
   <div class="package-line-container">
-    <!-- 1단계: 포장 타입 선택 -->
+    <!-- 1단계: 포장 타입 선택 !!!!-->
     <div
       v-if="currentStep === 'package-type-selection'"
       class="package-type-selection"
