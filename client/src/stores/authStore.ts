@@ -517,7 +517,7 @@ export const useAuthStore = defineStore('auth', () => {
       
       // axios 기본 설정
       if (typeof axios !== 'undefined') {
-        //axios.defaults.baseURL = 'http://localhost:3000'
+        axios.defaults.baseURL = 'http://localhost:3000'
         axios.defaults.timeout = 15000
         axios.defaults.withCredentials = false
         axios.defaults.headers.common['Content-Type'] = 'application/json'
