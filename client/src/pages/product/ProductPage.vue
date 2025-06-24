@@ -50,6 +50,7 @@
           <va-input v-model="form.product_perdt" label="허가일" type="date" />
           <va-input v-model="form.product_unit" label="단위" />
           <va-input v-model="form.product_safty" label="안전재고" />
+          <va-input v-model="form.product_packge" label="포장유형" />
 
           <div class="form-buttons">
             <va-button @click="registerProduct" color="primary">등록</va-button>
@@ -78,6 +79,7 @@ interface Product {
   product_unit: string
   product_safty: string
   product_img: string
+  product_packge: string
 }
 
 const products = ref<Product[]>([])
@@ -127,6 +129,7 @@ const form = ref({
   product_unit: '',
   product_safty: '',
   product_img: '', // 이미지 이름 저장
+  product_packge: ''
 })
 
 const previewImage = ref<string | null>(null);
@@ -135,7 +138,7 @@ const imageFile = ref<File | null>(null);
 function resetForm() {
   form.value = {
     product_code: '', product_name: '', product_pay: '', product_atc: '', product_gred: '', product_stand: '',
-    product_perdt: '', product_unit: '', product_safty: '', product_img: ''
+    product_perdt: '', product_unit: '', product_safty: '', product_img: '', product_packge: ''
   };
   previewImage.value = null;
   imageFile.value = null;

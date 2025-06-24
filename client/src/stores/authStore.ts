@@ -335,7 +335,7 @@ export const useAuthStore = defineStore('auth', () => {
       const targetToken = tokenToVerify || token.value
       if (!targetToken) return false
       
-      const response = await axios.get('http://localhost:3000/auth/verify', {
+      const response = await axios.get('/auth/verify', {
         headers: { Authorization: `Bearer ${targetToken}` },
         timeout: 10000
       })
@@ -362,7 +362,7 @@ export const useAuthStore = defineStore('auth', () => {
       
       console.log('로그인 요청:', { employee_id })
       
-      const response = await axios.post('http://localhost:3000/auth/login', {
+      const response = await axios.post('/auth/login', {
         employee_id: employee_id.toString().trim(),
         password: password.toString().trim()
       }, {
@@ -450,7 +450,7 @@ export const useAuthStore = defineStore('auth', () => {
       // 서버에 로그아웃 요청
       if (token.value) {
         try {
-          await axios.post('http://localhost:3000/auth/logout', {}, {
+          await axios.post('/auth/logout', {}, {
             headers: { Authorization: `Bearer ${token.value}` },
             timeout: 5000
           })
@@ -517,7 +517,7 @@ export const useAuthStore = defineStore('auth', () => {
       
       // axios 기본 설정
       if (typeof axios !== 'undefined') {
-        axios.defaults.baseURL = 'http://localhost:3000'
+        //axios.defaults.baseURL = 'http://localhost:3000'
         axios.defaults.timeout = 15000
         axios.defaults.withCredentials = false
         axios.defaults.headers.common['Content-Type'] = 'application/json'

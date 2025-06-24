@@ -53,7 +53,9 @@ const proxyPaths = [
   'workResultStatus',
   'processInit',
   'materialOutbound',
-  'endEq'
+  'endEq',
+  'employee',
+  'auth'
 ]
 
 // ✅ 공통 proxy 설정 생성 함수
@@ -71,7 +73,8 @@ const createProxy = (paths: string[]) =>
 
 export default defineConfig({
   build: {
-    sourcemap: true
+    sourcemap: true,
+    //outDir: "../server/public",
   },
   server: {
     proxy: createProxy(proxyPaths)
