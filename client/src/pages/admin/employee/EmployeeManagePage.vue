@@ -83,13 +83,7 @@
         >
           삭제
         </va-button>
-        <va-button 
-          preset="secondary"
-          icon="download"
-          @click="exportExcel"
-        >
-          엑셀
-        </va-button>
+        
       </div>
 
       <!-- 권한 없는 사용자를 위한 메시지 -->
@@ -433,9 +427,8 @@ const filteredEmployees = computed(() => {
   return employees.value.filter(employee => {
     // 검색어 필터
     const matchesSearch = !searchText.value || 
-      employee.employee_id.toLowerCase().includes(searchText.value.toLowerCase()) ||
+      String(employee.employee_id).toLowerCase().includes(searchText.value.toLowerCase()) ||
       employee.employee_name.toLowerCase().includes(searchText.value.toLowerCase())
-    
     // 드롭다운 필터
     const matchesFilters = 
       (!filters.value.employeeId || employee.employee_id === filters.value.employeeId) &&
@@ -797,6 +790,7 @@ watch(itemsPerPage, () => {
   display: flex;
   gap: 8px;
   margin-bottom: 16px;
+  justify-content: right;
 }
 
 /* 테이블 */

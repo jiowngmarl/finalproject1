@@ -1,6 +1,20 @@
-// services/packageService.js - 실제 제품명 매핑 완전 적용
+// services/packageService.js - Process7 포장공정 전체 구조 반영 (오류 수정)
+// 작업 흐름:
+// Process7 = 포장공정 전체 (내포장 + 외포장)
+// code_value로 단계 구분:
+// - p1: 포장 대기
+// - p3: 내포장 진행중  
+// - p5: 내포장 완료 (외포장 준비)
+// - p7: 외포장 진행중
+// - p9: 외포장 완료
+//
+// UPDATE 쿼리 흐름:
+// - 내포장 시작: p1 → p3
+// - 내포장 완료: p3 → p5  
+// - 외포장 시작: p5 → p7
+// - 외포장 완료: p7 → p9
+
 const mariadb = require('mariadb');
-const packageQueries = require('../database/sqls/package');
 require('dotenv').config();
 
 class PackageService {
@@ -20,10 +34,9 @@ class PackageService {
             resetAfterUse: true
         };
 
-        console.log('데이터베이스 연결 설정 (실제 제품명 매핑):');
+        console.log('데이터베이스 연결 설정:');
         console.log('- HOST:', dbConfig.host);
         console.log('- USER:', dbConfig.user);
-        console.log('- PASSWORD:', dbConfig.password ? '****' : 'MISSING');
         console.log('- DATABASE:', dbConfig.database);
         console.log('- PORT:', dbConfig.port);
 
@@ -36,7 +49,7 @@ class PackageService {
         try {
             console.log('데이터베이스 연결 테스트 시작...');
             conn = await this.pool.getConnection();
-            console.log('데이터베이스 연결 성공!');
+            console.log('데이터베이스 연결 성공');
             
             const result = await conn.query('SELECT 1 as test');
             console.log('쿼리 테스트 성공:', result);
@@ -50,841 +63,1238 @@ class PackageService {
         }
     }
 
-    // 안전한 쿼리 실행
-    async executeRawQuery(query, params = [], retries = 2) {
+    // 쿼리 실행
+    async executeQuery(query, params = []) {
         let conn;
-        let lastError;
-        
-        for (let attempt = 1; attempt <= retries + 1; attempt++) {
-            try {
-                console.log(`쿼리 실행 시도 ${attempt}/${retries + 1}:`, query.substring(0, 100) + '...');
-                
-                conn = await this.pool.getConnection();
-                const rows = await conn.query(query, params);
-                
-                console.log(`쿼리 실행 성공 (시도 ${attempt}): ${Array.isArray(rows) ? rows.length : 1}건`);
-                return rows;
-                
-            } catch (error) {
-                lastError = error;
-                console.error(`쿼리 실행 실패 (시도 ${attempt}):`, error.message);
-                
-                if (conn) {
-                    conn.release();
-                    conn = null;
-                }
-                
-                if (attempt <= retries && (
-                    error.code === 'ER_GET_CONNECTION_TIMEOUT' ||
-                    error.code === 'ER_ACCESS_DENIED_ERROR' ||
-                    error.code === 'ECONNREFUSED'
-                )) {
-                    console.log(`${attempt * 1000}ms 후 재시도...`);
-                    await new Promise(resolve => setTimeout(resolve, attempt * 1000));
-                } else {
-                    break;
-                }
-            } finally {
-                if (conn) conn.release();
-            }
+        try {
+            console.log('쿼리 실행:', query.substring(0, 100) + '...');
+            
+            conn = await this.pool.getConnection();
+            const rows = await conn.query(query, params);
+            
+            console.log('쿼리 실행 성공:', Array.isArray(rows) ? rows.length : 1, '건');
+            return rows;
+            
+        } catch (error) {
+            console.error('쿼리 실행 실패:', error.message);
+            throw error;
+        } finally {
+            if (conn) conn.release();
         }
-        
-        throw lastError;
     }
 
-    // 제품코드를 실제 제품명으로 변환하는 함수
+   // 제품코드 추출 로직도 검증
+extractProductCodeFromLine(lineName) {
+    if (!lineName) return 'BJA-STD-10';
+    
+    console.log('제품코드 추출:', lineName);
+    
+    // 라인별 제품코드 매핑 (우선순위)
+    const lineMapping = {
+        'A라인': 'BJA-STD-10',    // A라인 = 베아제정
+        'B라인': 'BJA-DR-10',    // B라인 = 닥터베아제정  🔥 여기가 중요!
+        'C라인': 'FST-GOLD-10',  // C라인 = 헬스컵골드정
+        'D라인': 'FST-PLUS-10',  // D라인 = 헬스컵플러스정
+        'E라인': 'GB-V-10'       // E라인 = 게보린브이정
+    };
+    
+    // 라인명으로 먼저 매핑
+    for (const [line, productCode] of Object.entries(lineMapping)) {
+        if (lineName.includes(line)) {
+            console.log(`라인 매칭: ${line} -> ${productCode}`);
+            // 🔥 수정: 30정 처리 로직 개선
+            if (lineName.includes('30')) {
+                const result = productCode.replace('-10', '-30');
+                console.log(`30정 처리: ${productCode} -> ${result}`);
+                return result;  // BJA-DR-10 -> BJA-DR-30
+            }
+            if (lineName.includes('60')) return productCode.replace('-10', '-60');
+            return productCode;
+        }
+    }
+    
+    // 제품명 매핑 - 긴 이름부터 먼저 체크
+    const productMapping = {
+        '닥터베아제정': 'BJA-DR-10',
+        '베아제정': 'BJA-STD-10',
+        '헬스컵골드정': 'FST-GOLD-10',
+        '헬스컵플러스정': 'FST-PLUS-10',
+        '게보린브이정': 'GB-V-10',
+        '게보린정': 'GB-STD-10',
+        '그날엔큐정': 'GN-Q-10',
+        '그날엔정': 'GN-STD-10',
+        '판코레아정': 'PCT-STD-10',
+        '타이레놀정500mg': 'TN-500-10',
+        '타이레놀정8시간': 'TN-8HR-10',
+        '타이레놀우먼스정': 'TN-WMN-10'
+    };
+    
+    for (const [productName, productCode] of Object.entries(productMapping)) {
+        if (lineName.includes(productName)) {
+            console.log(`제품명 매칭: ${productName} -> ${productCode}`);
+            if (lineName.includes('30')) return productCode.replace('-10', '-30');
+            if (lineName.includes('60')) return productCode.replace('-10', '-60');
+            return productCode;
+        }
+    }
+    
+    console.log('제품코드 매핑 실패, 기본값 사용');
+    return 'BJA-STD-10';
+}
+
+    // 제품명 변환
     getProductNameFromCode(productCode) {
-        if (!productCode) return '제품명 없음';
-        
         const productNameMap = {
-            // BJA 계열 - 베아제정
-            'BJA-STD-10': '베아제정',
-            'BJA-STD-30': '베아제정',
-            'BJA-STD-60': '베아제정',
-            
-            // BJA 계열 - 닥터베아제정
-            'BJA-DR-10': '닥터베아제정',
-            'BJA-DR-30': '닥터베아제정', 
-            'BJA-DR-60': '닥터베아제정',
-            
-            // FST 계열 - 헬스컵골드정
-            'FST-GOLD-10': '헬스컵골드정',
-            'FST-GOLD-30': '헬스컵골드정',
-            'FST-GOLD-60': '헬스컵골드정',
-            
-            // FST 계열 - 헬스컵플러스정
-            'FST-PLUS-10': '헬스컵플러스정',
-            'FST-PLUS-30': '헬스컵플러스정',
-            'FST-PLUS-60': '헬스컵플러스정',
-            
-            // GB 계열 - 게보린정
-            'GB-STD-10': '게보린정',
-            'GB-STD-30': '게보린정',
-            'GB-STD-60': '게보린정',
-            
-            // GB 계열 - 게보린브이정
-            'GB-V-10': '게보린브이정',
-            'GB-V-30': '게보린브이정',
-            'GB-V-60': '게보린브이정',
-            
-            // GN 계열 - 그날엔큐정
-            'GN-Q-10': '그날엔큐정',
-            'GN-Q-30': '그날엔큐정',
-            'GN-Q-60': '그날엔큐정',
-            
-            // GN 계열 - 그날엔정
-            'GN-STD-10': '그날엔정',
-            'GN-STD-30': '그날엔정',
-            'GN-STD-60': '그날엔정',
-            
-            // PCT 계열 - 판코레아정
-            'PCT-STD-10': '판코레아정',
-            'PCT-STD-30': '판코레아정',
-            'PCT-STD-60': '판코레아정',
-            
-            // TN 계열 - 타이레놀정500mg
-            'TN-500-10': '타이레놀정500mg',
-            'TN-500-30': '타이레놀정500mg',
-            'TN-500-60': '타이레놀정500mg',
-            
-            // TN 계열 - 타이레놀정8시간 ER
-            'TN-8HR-10': '타이레놀정8시간 ER',
-            'TN-8HR-30': '타이레놀정8시간 ER',
-            'TN-8HR-60': '타이레놀정8시간 ER',
-            
-            // TN 계열 - 타이레놀우먼스정
-            'TN-WMN-10': '타이레놀우먼스정',
-            'TN-WMN-30': '타이레놀우먼스정',
-            'TN-WMN-60': '타이레놀우먼스정'
+            'BJA-STD-10': '베아제정', 'BJA-STD-30': '베아제정', 'BJA-STD-60': '베아제정',
+            'BJA-DR-10': '닥터베아제정', 'BJA-DR-30': '닥터베아제정', 'BJA-DR-60': '닥터베아제정',
+            'FST-GOLD-10': '헬스컵골드정', 'FST-GOLD-30': '헬스컵골드정', 'FST-GOLD-60': '헬스컵골드정',
+            'FST-PLUS-10': '헬스컵플러스정', 'FST-PLUS-30': '헬스컵플러스정', 'FST-PLUS-60': '헬스컵플러스정',
+            'GB-STD-10': '게보린정', 'GB-STD-30': '게보린정', 'GB-STD-60': '게보린정',
+            'GB-V-10': '게보린브이정', 'GB-V-30': '게보린브이정', 'GB-V-60': '게보린브이정',
+            'GN-Q-10': '그날엔큐정', 'GN-Q-30': '그날엔큐정', 'GN-Q-60': '그날엔큐정',
+            'GN-STD-10': '그날엔정', 'GN-STD-30': '그날엔정', 'GN-STD-60': '그날엔정',
+            'PCT-STD-10': '판코레아정', 'PCT-STD-30': '판코레아정', 'PCT-STD-60': '판코레아정',
+            'TN-500-10': '타이레놀정500mg', 'TN-500-30': '타이레놀정500mg', 'TN-500-60': '타이레놀정500mg',
+            'TN-8HR-10': '타이레놀정8시간 ER', 'TN-8HR-30': '타이레놀정8시간 ER', 'TN-8HR-60': '타이레놀정8시간 ER',
+            'TN-WMN-10': '타이레놀우먼스정', 'TN-WMN-30': '타이레놀우먼스정', 'TN-WMN-60': '타이레놀우먼스정'
         };
         
-        // 정확한 매칭
-        if (productNameMap[productCode]) {
-            console.log(`제품명 매핑: ${productCode} -> ${productNameMap[productCode]}`);
-            return productNameMap[productCode];
-        }
-        
-        // 부분 매칭 (용량 정보 제거하고 매칭)
-        const baseCode = productCode.replace(/-\d+$/, '');
-        for (const [code, name] of Object.entries(productNameMap)) {
-            if (code.startsWith(baseCode)) {
-                console.log(`부분 매핑: ${productCode} -> ${name}`);
-                return name;
-            }
-        }
-        
-        // 매핑되지 않는 경우 코드 그대로 반환
-        console.log(`매핑되지 않은 제품코드: ${productCode}`);
-        return productCode;
+        const productName = productNameMap[productCode] || productCode;
+        console.log(`제품코드 -> 제품명 변환: ${productCode} -> ${productName}`);
+        return productName;
     }
 
-    // 라인명에서 제품코드 추출 (완전한 매핑 로직)
-    extractProductCodeFromLine(lineName) {
+    // 단순한 내포장 작업번호 조회 (Process7 = 포장공정 전체)
+    async getSimpleInnerWorkNumbers(productCode) {
         try {
-            if (!lineName) return 'BJA-STD-10';  // 베아제정 기본값
+            console.log('=== 단순한 내포장 작업번호 조회 (Process7 = 포장공정) ===');
             
-            console.log('제품코드 추출 시작:', lineName);
+            // Process7이 포장공정 전체 - 내포장은 p1, p3, p5 상태
+            const allWork = await this.executeQuery(`
+                SELECT 
+                    wrd.result_detail,
+                    wrd.result_id,
+                    wrd.process_code,
+                    wrd.code_value,
+                    wrd.pass_qty,
+                    wrd.work_start_time,
+                    wrd.work_end_time,
+                    wrd.process_seq,
+                    CASE 
+                        WHEN wrd.manager_id REGEXP '^[0-9]+$' THEN e.employee_name
+                        ELSE COALESCE(wrd.manager_id)
+                    END as employee_name
+                FROM tablets.work_result_detail wrd
+                LEFT JOIN tablets.employees e ON wrd.manager_id = CAST(e.employee_id AS CHAR)
+                WHERE wrd.result_detail IS NOT NULL
+                AND (wrd.process_code LIKE '%Process7%' OR wrd.process_seq = 7)
+                AND wrd.code_value IN ('p1', 'p3', 'p5')
+                ORDER BY wrd.work_start_time DESC
+                LIMIT 10
+            `);
             
-            // 1. 완전한 제품코드 패턴 매칭
-            const codePatterns = [
-                // 표준 패턴들
-                /(BJA-(?:DR|STD)-\d+)/i,           // BJA-DR-10, BJA-STD-30 등
-                /(FST-(?:GOLD|PLUS)-\d+)/i,       // FST-GOLD-10, FST-PLUS-30 등  
-                /(GB-(?:STD|V)-\d+)/i,            // GB-STD-10, GB-V-30 등
-                /(GN-(?:Q|STD)-\d+)/i,            // GN-Q-10, GN-STD-30 등
-                /(PCT-STD-\d+)/i,                 // PCT-STD-10 등
-                /(TN-500-\d+)/i,                  // TN-500-10 등
-                /(TN-8HR-\d+)/i,                  // TN-8HR-10 등  
-                /(TN-WMN-\d+)/i,                  // TN-WMN-10 등
-                // 일반적 패턴
-                /([A-Z]{2,3}-[A-Z]{2,4}-\d+)/i    // 기타 패턴
-            ];
+            console.log(`포장공정(Process7) 데이터: ${allWork.length}건`);
             
-            for (const pattern of codePatterns) {
-                const match = lineName.match(pattern);
-                if (match) {
-                    console.log(`제품코드 패턴 매칭 성공: ${match[1]} (라인명: ${lineName})`);
-                    return match[1].toUpperCase();
+            if (allWork.length > 0) {
+                // 제품코드가 일치하는 것 우선, 내포장 상태 우선 (p1, p3)
+                const matchingProduct = allWork.filter(work => 
+                    (work.process_code.includes(productCode) || work.process_code.includes('BJA-STD-10'))
+                );
+                
+                if (matchingProduct.length > 0) {
+                    console.log('제품코드 매칭 데이터 발견:', matchingProduct[0]);
+                    return matchingProduct;
                 }
             }
             
-            // 2. 제품명 기반 완전 매핑 (전체 제품 목록 반영)
-            const productNameMapping = {
-                // BJA 계열
-                '닥터베아제정': { base: 'BJA-DR', default: 'BJA-DR-10' },
-                '베아제정': { base: 'BJA-STD', default: 'BJA-STD-10' },
-                
-                // FST 계열
-                '헬스컵골드정': { base: 'FST-GOLD', default: 'FST-GOLD-10' },
-                '헬스컵플러스정': { base: 'FST-PLUS', default: 'FST-PLUS-10' },
-                
-                // GB 계열
-                '게보린정': { base: 'GB-STD', default: 'GB-STD-10' },
-                '게보린브이정': { base: 'GB-V', default: 'GB-V-10' },
-                
-                // GN 계열
-                '그날엔큐정': { base: 'GN-Q', default: 'GN-Q-10' },
-                '그날엔정': { base: 'GN-STD', default: 'GN-STD-10' },
-                
-                // PCT 계열
-                '판코레아정': { base: 'PCT-STD', default: 'PCT-STD-10' },
-                
-                // TN 계열
-                '타이레놀정500mg': { base: 'TN-500', default: 'TN-500-10' },
-                '타이레놀정8시간': { base: 'TN-8HR', default: 'TN-8HR-10' },
-                '타이레놀우먼스정': { base: 'TN-WMN', default: 'TN-WMN-10' }
-            };
-            
-            // 제품명으로 매핑 확인
-            for (const [productName, config] of Object.entries(productNameMapping)) {
-                if (lineName.includes(productName)) {
-                    // 용량별 구분
-                    if (lineName.includes('30') || lineName.includes('30정')) {
-                        const code30 = `${config.base}-30`;
-                        console.log(`제품명+용량 매핑: ${productName} 30정 -> ${code30}`);
-                        return code30;
-                    }
-                    if (lineName.includes('60') || lineName.includes('60정')) {
-                        const code60 = `${config.base}-60`;
-                        console.log(`제품명+용량 매핑: ${productName} 60정 -> ${code60}`);
-                        return code60;
-                    }
-                    
-                    console.log(`제품명 매핑: ${productName} -> ${config.default}`);
-                    return config.default;
-                }
-            }
-            
-            // 3. 제품코드 prefix 매핑
-            const prefixMapping = {
-                // BJA 계열
-                'BJA-DR': 'BJA-DR-10',
-                'BJA-STD': 'BJA-STD-10',
-                
-                // FST 계열
-                'FST-GOLD': 'FST-GOLD-10', 
-                'FST-PLUS': 'FST-PLUS-10',
-                
-                // GB 계열
-                'GB-STD': 'GB-STD-10',
-                'GB-V': 'GB-V-10',
-                
-                // GN 계열
-                'GN-Q': 'GN-Q-10',
-                'GN-STD': 'GN-STD-10',
-                
-                // PCT 계열
-                'PCT-STD': 'PCT-STD-10',
-                
-                // TN 계열
-                'TN-500': 'TN-500-10',
-                'TN-8HR': 'TN-8HR-10', 
-                'TN-WMN': 'TN-WMN-10'
-            };
-            
-            for (const [prefix, defaultCode] of Object.entries(prefixMapping)) {
-                if (lineName.includes(prefix)) {
-                    // 용량 체크
-                    if (lineName.includes('30')) {
-                        const code30 = defaultCode.replace('-10', '-30');
-                        console.log(`Prefix+용량 매핑: ${prefix} 30정 -> ${code30}`);
-                        return code30;
-                    }
-                    if (lineName.includes('60')) {
-                        const code60 = defaultCode.replace('-10', '-60');
-                        console.log(`Prefix+용량 매핑: ${prefix} 60정 -> ${code60}`);
-                        return code60;
-                    }
-                    
-                    console.log(`Prefix 매핑: ${prefix} -> ${defaultCode}`);
-                    return defaultCode;
-                }
-            }
-            
-            // 4. 라인명 기반 기본값 (베아제정 계열을 기본으로)
-            if (lineName.includes('A라인')) {
-                console.log('A라인 감지, 베아제정 기본값');
-                return 'BJA-STD-10';
-            }
-            
-            if (lineName.includes('B라인')) {
-                console.log('B라인 감지, 베아제정 30정');
-                return 'BJA-STD-30';
-            }
-            
-            if (lineName.includes('C라인')) {
-                console.log('C라인 감지, 베아제정 60정');
-                return 'BJA-STD-60';
-            }
-            
-            // 5. 용량별 기본 제품 (베아제정 계열)
-            if (lineName.includes('30')) {
-                console.log('30정 패턴 감지, 베아제정 30정');
-                return 'BJA-STD-30';
-            }
-            if (lineName.includes('60')) {
-                console.log('60정 패턴 감지, 베아제정 60정');
-                return 'BJA-STD-60';
-            }
-            
-            // 6. 최종 기본값
-            console.log('제품코드 추출 실패, 기본값 BJA-STD-10 사용');
-            return 'BJA-STD-10';
+            return allWork;
             
         } catch (error) {
-            console.log('제품코드 추출 중 오류, 기본값 사용:', error.message);
-            return 'BJA-STD-10';
+            console.error('단순한 내포장 작업번호 조회 실패:', error);
+            return [];
         }
     }
 
-    // 새 작업번호 생성 (실제 제품명 적용)
-    async createNewWorkOrder(제품코드, lineId) {
+    async getInnerWorkByLine(lineId, lineName) {
+    try {
+        console.log(`=== 내포장 작업번호 조회 시작: ${lineId}, ${lineName} ===`);
+        
+        let productCode = this.extractProductCodeFromLine(lineName);
+        console.log(`추출된 제품코드: ${productCode}`);
+        
+        // 🔥 수정: OR 조건 완전 제거 - 정확한 제품코드만 조회
+        const innerWork = await this.executeQuery(`
+            SELECT 
+                wrd.result_detail,
+                wrd.result_id,
+                wrd.process_code,
+                wrd.code_value,
+                wrd.pass_qty,
+                wrd.work_start_time,
+                wrd.work_end_time,
+                wrd.process_seq,
+                wrd.manager_id,
+                -- 개선된 담당자 정보 조회
+                CASE 
+                    WHEN wrd.manager_id IS NULL OR wrd.manager_id = '' THEN '김홍인'  
+                    WHEN wrd.manager_id REGEXP '^[0-9]+$' THEN 
+                        COALESCE(e.employee_name, CONCAT('ID:', wrd.manager_id))
+                    ELSE wrd.manager_id
+                END as employee_name,
+                -- 담당자 상태 확인용
+                e.employee_name as db_employee_name,
+                e.employment_status
+            FROM tablets.work_result_detail wrd
+            LEFT JOIN tablets.employees e ON wrd.manager_id = CAST(e.employee_id AS CHAR)
+            WHERE (wrd.process_code LIKE '%Process7%' OR wrd.process_seq = 7)
+            AND wrd.result_detail IS NOT NULL
+            AND wrd.process_code LIKE ?  -- 🔥 수정: 정확한 제품코드만 매칭 (OR 조건 제거)
+            AND wrd.code_value IN ('p1', 'p3', 'p5')  
+            ORDER BY 
+                CASE WHEN wrd.code_value = 'p1' THEN 1  
+                     WHEN wrd.code_value = 'p3' THEN 2  
+                     WHEN wrd.code_value = 'p5' THEN 3  
+                     ELSE 4 END,
+                wrd.work_start_time DESC
+            LIMIT 5
+        `, [`%${productCode}%`]);  // BJA-DR-60이면 %BJA-DR-60%로만 검색
+        
+        console.log(`검색 조건: process_code LIKE '%${productCode}%'`);
+        console.log(`검색 결과: ${innerWork.length}건`);
+        
+        if (innerWork.length > 0) {
+            console.log('포장공정(Process7) 내포장 작업 발견:', innerWork[0]);
+            console.log('매칭된 process_code:', innerWork[0].process_code);
+            
+            const work = innerWork[0];
+            
+            let stepStatus = 'READY';
+            switch(work.code_value) {
+                case 'p1': stepStatus = 'READY'; break;        
+                case 'p3': stepStatus = 'IN_PROGRESS'; break;  
+                case 'p5': stepStatus = 'COMPLETED'; break;    
+                default: stepStatus = 'READY';
+            }
+            
+            return {
+                result_detail: work.result_detail,
+                work_order_no: work.result_detail,
+                result_id: work.result_id,
+                product_code: productCode,
+                product_name: this.getProductNameFromCode(productCode),
+                process_code: work.process_code,
+                step_status: stepStatus,
+                input_qty: work.pass_qty || 1000,
+                employee_name: work.employee_name,
+                db_code_value: work.code_value,
+                work_start_time: work.work_start_time,
+                work_end_time: work.work_end_time,
+                process_seq: work.process_seq,
+                available_next_step: this.getNextStep(work.code_value),
+                // 디버깅 정보 추가
+                debug_manager_info: {
+                    manager_id: work.manager_id,
+                    db_employee_name: work.db_employee_name,
+                    employment_status: work.employment_status
+                }
+            };
+        }
+        
+        // 조회된 데이터가 없을 경우
+        console.log(`${productCode} 제품의 포장 작업이 없습니다.`);
+        return {
+            result_detail: null,
+            work_order_no: null,
+            result_id: null,
+            product_code: productCode,
+            product_name: this.getProductNameFromCode(productCode),
+            process_code: 'Process7',
+            step_status: 'NO_DATA',
+            input_qty: 0,
+            employee_name: '김홍인',
+            message: `해당 라인(${productCode})의 내포장 작업이 없습니다.`
+        };
+        
+    } catch (error) {
+        console.error('내포장 작업번호 조회 실패:', error);
+        const productCode = this.extractProductCodeFromLine(lineName);
+        return {
+            result_detail: null,
+            work_order_no: null,
+            result_id: null,
+            product_code: productCode,
+            product_name: this.getProductNameFromCode(productCode),
+            process_code: 'Process7',
+            step_status: 'ERROR',
+            input_qty: 0,
+            employee_name: '김홍인',
+            error: error.message
+        };
+    }
+}
+    // 프로젝트 지식에 따른 내포장 조회
+    async getInnerWorkByProjectKnowledge(productCode) {
         try {
-            console.log(`새 작업번호 생성 (실제 제품명 적용): 제품=${제품코드}, 라인=${lineId}`);
-            
-            const now = new Date();
-            const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-            const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '');
-            
-            const resultId = `RE${dateStr}${timeStr}`;
-            const workOrderNo = `WO${dateStr}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-            const 공정코드 = lineId.includes('내포장') || lineId.includes('INNER') ? 'p3' : 'p5';
-            const processGroupCode = `${제품코드}-Process`;
-            
-            // 실제 제품명 가져오기
-            const realProductName = this.getProductNameFromCode(제품코드);
-            console.log(`제품코드 ${제품코드} -> 실제 제품명: ${realProductName}`);
-            
-            // 안전한 범위 내 정수 생성
-            const baseNumber = 1000000;
-            const randomNumber = Math.floor(Math.random() * 1000000000);
-            const resultDetailId = baseNumber + randomNumber;
-            
-            // 기본 작업자 ID (employees 테이블에서 조회)
-            let defaultEmployeeId = 2;
-            let defaultEmployeeName = '김홍인';
+            console.log(`내포장 포장코드 : ${productCode}`);
+            // 2-1) 해당 제품코드의 공정흐름도 정보 가져오기
+            console.log('2-1) 공정흐름도 정보 조회');
+            let processInfo;
             
             try {
-                const employeeResult = await this.executeRawQuery(`
-                    SELECT employee_id, employee_name 
-                    FROM tablets.employees 
-                    WHERE position LIKE '%작업자%' 
+                processInfo = await this.executeQuery(`
+                    SELECT process_group_code, process_seq, process_code
+                    FROM tablets.process
+                    WHERE process_group_code = (
+                        SELECT process_group_code 
+                        FROM tablets.process_group 
+                        WHERE product_code = ?
+                    )
+                    AND process_int = (
+                        SELECT process_int 
+                        FROM tablets.process_it 
+                        WHERE process_name = '포장'
+                    )
+                    ORDER BY process_seq
                     LIMIT 1
-                `);
-                
-                if (employeeResult.length > 0) {
-                    defaultEmployeeId = employeeResult[0].employee_id;
-                    defaultEmployeeName = employeeResult[0].employee_name;
-                    console.log(`기본 작업자 설정: ${defaultEmployeeName} (ID: ${defaultEmployeeId})`);
-                }
-            } catch (empError) {
-                console.log('기본 작업자 조회 실패, 기본값 사용:', empError.message);
+                `, [productCode]);
+            } catch (error) {
+                console.log('프로젝트 지식 쿼리 실패:', error.message);
+                return null; // 단순 조회로 넘어감
             }
             
-            console.log(`생성할 작업번호: ${workOrderNo}, 실적ID: ${resultId}, 공정코드: ${공정코드}`);
-            console.log(`작업자: ${defaultEmployeeName} (ID: ${defaultEmployeeId})`);
-            console.log(`제품명: ${realProductName}`);
-            
-            // INT(11) 범위 확인
-            if (resultDetailId > 2147483647) {
-                const safeId = Math.floor(Math.random() * 1000000000) + 1000000;
-                console.log(`범위 초과로 재생성: ${safeId}`);
-                return await this.createNewWorkOrder(제품코드, lineId);
+            if (processInfo.length === 0) {
+                console.log('공정흐름도 정보 없음');
+                return null;
             }
             
-            // 1. work_order_master 생성 (실제 작업자 ID)
-            await this.executeRawQuery(`
-                INSERT INTO tablets.work_order_master (
-                    work_order_no, plan_id, writer_id, write_date, 
-                    order_start_dt, order_end_dt, order_remark
-                ) VALUES (?, ?, ?, NOW(), NOW(), DATE_ADD(NOW(), INTERVAL 1 DAY), ?)
-            `, [workOrderNo, 제품코드, defaultEmployeeId, `${공정코드} 작업 자동 생성`]);
+            const { process_group_code, process_seq } = processInfo[0];
+            console.log(`공정그룹코드: ${process_group_code}, 포장공정 순서: ${process_seq}`);
             
-            // 2. work_result 생성
-            await this.executeRawQuery(`
-                INSERT INTO tablets.work_result (
-                    result_id, work_order_no, process_group_code, result_remark, 
-                    code_value, work_start_date, work_end_date
-                ) VALUES (?, ?, ?, ?, 'waiting', NOW(), NULL)
-            `, [resultId, workOrderNo, processGroupCode, `${공정코드} 실적 자동 생성`]);
-            
-            // 3. work_result_detail 생성 (실제 작업자 ID를 d + employee_id 형태로 저장)
-            await this.executeRawQuery(`
-                INSERT INTO tablets.work_result_detail (
-                    result_detail, result_id, process_code, code_value, 
-                    work_start_time, pass_qty, process_defective_qty, 
-                    manager_id, eq_type_code
-                ) VALUES (?, ?, ?, 'waiting', NOW(), 1000, '0', ?, 'i8')
-            `, [resultDetailId, resultId, 공정코드, `d${defaultEmployeeId}`]);
-            
-            console.log(`새 작업 생성 완료 (실제 제품명 적용): ${workOrderNo}`);
-            
-            return {
-                work_order_no: workOrderNo,
-                work_id: workOrderNo,
-                result_detail_id: resultDetailId,
-                result_id: resultId,
-                step_status: 'READY',
-                input_qty: 1000,
-                output_qty: 0,
-                product_name: realProductName,           // 실제 제품명 사용
-                final_product_name: realProductName,     // 실제 제품명 사용
-                employee_name: defaultEmployeeName,
-                employee_id: defaultEmployeeId,
-                product_code: 제품코드,
-                process_code: 공정코드
-            };
-            
-        } catch (error) {
-            console.error('새 작업번호 생성 실패 (실제 제품명 적용):', error);
-            throw error;
-        }
-    }
-
-    // 내포장 라인별 작업번호 조회 (실제 제품명 적용)
-    async getInnerWorkByLine(lineId, lineName) {
-        try {
-            console.log(`\n=== 내포장 작업번호 조회 (실제 제품명 적용) ===`);
-            console.log(`라인: ${lineId}, ${lineName}`);
-            
-            // 라인명에서 제품코드 추출
-            const productCode = this.extractProductCodeFromLine(lineName) || 'BJA-STD-10';
-            console.log(`추출된 제품코드: ${productCode}`);
-            
-            // employees 테이블 조인으로 내포장 작업 조회
-            const result = await this.executeRawQuery(`
-                SELECT 
-                    wom.work_order_no as 작업번호,
-                    wom.plan_id as 제품코드,
-                    COALESCE(p.product_name, '제품명없음') as 제품명,
-                    wrd.code_value as 진행상태,
-                    wrd.pass_qty as input_qty,
-                    0 as output_qty,
-                    COALESCE(emp.employee_name, '작업자') as employee_name,
-                    COALESCE(emp.employee_id, 2) as employee_id,
-                    COALESCE(emp.position, '작업자') as position,
-                    COALESCE(emp.department_code, '포장부') as department_code,
-                    wrd.manager_id,
-                    ? as line_id,
-                    ? as line_name,
-                    wrd.result_detail,
-                    wr.result_id,
-                    '내포장' as step_name,
-                    'READY' as step_status
-                FROM tablets.work_order_master wom
-                JOIN tablets.work_result wr ON wom.work_order_no = wr.work_order_no
+            // 2-2) 작업실적테이블에서 진행중인 실적 가져오기 (이전 공정 완료된 것)
+            console.log('2-2) 이전 공정 완료된 실적 조회');
+            const workResult = await this.executeQuery(`
+                SELECT wr.result_id
+                FROM tablets.work_result wr 
                 JOIN tablets.work_result_detail wrd ON wr.result_id = wrd.result_id
-                LEFT JOIN tablets.product p ON wom.plan_id = p.product_code
-                LEFT JOIN tablets.employees emp ON CAST(REPLACE(wrd.manager_id, 'd', '') AS UNSIGNED) = emp.employee_id
-                WHERE wrd.process_code = 'p3'
-                AND wrd.code_value IN ('waiting', 'ready', '대기', '준비')
-                AND (wom.plan_id LIKE ? OR p.product_name LIKE ?)
-                ORDER BY wom.order_start_dt ASC
-                LIMIT 1
-            `, [lineId, lineName, `%${productCode}%`, `%${productCode}%`]);
-            
-            if (result.length > 0) {
-                const work = result[0];
-                
-                // 실제 제품명 적용
-                const realProductName = this.getProductNameFromCode(work.제품코드);
-                
-                console.log(`내포장 작업번호 조회 성공: ${work.작업번호}, 제품명: ${realProductName}`);
-                return {
-                    work_order_no: work.작업번호,
-                    work_id: work.작업번호,
-                    result_detail_id: work.result_detail,
-                    result_id: work.result_id,
-                    step_status: work.step_status,
-                    input_qty: work.input_qty || 1000,
-                    output_qty: work.output_qty || 0,
-                    product_name: realProductName,              // 실제 제품명
-                    final_product_name: realProductName,        // 실제 제품명
-                    employee_name: work.employee_name,
-                    employee_id: work.employee_id,
-                    position: work.position,
-                    department_code: work.department_code,
-                    product_code: work.제품코드,
-                    process_code: 'p3'
-                };
-            }
-            
-            // 작업이 없으면 새로 생성
-            console.log('기존 내포장 작업이 없어서 새로 생성 (실제 제품명 적용)');
-            return await this.createNewWorkOrder(productCode, lineId);
-            
-        } catch (error) {
-            console.error(`내포장 작업번호 조회 실패 (실제 제품명 적용):`, error);
-            throw error;
-        }
-    }
-
-    // 외포장 라인별 작업번호 조회 (실제 제품명 적용)
-    async getOuterWorkByLine(lineId, lineName) {
-        try {
-            console.log(`\n=== 외포장 작업번호 조회 (실제 제품명 적용) ===`);
-            console.log(`라인: ${lineId}, ${lineName}`);
-            
-            // 라인명에서 제품코드 추출
-            const productCode = this.extractProductCodeFromLine(lineName) || 'BJA-STD-10';
-            console.log(`추출된 제품코드: ${productCode}`);
-            
-            // 3-1) 포장공정실적에서 내포장 완료된 건 가져오기
-            console.log('\nStep 3-1: 포장공정실적에서 내포장 완료된 건 가져오기');
-            const 완료된내포장 = await this.executeRawQuery(`
-                SELECT 
-                    wom.work_order_no as 작업번호,
-                    wr.result_id as 실적ID,
-                    wrd.process_code as 공정코드,
-                    wrd.work_start_time as 시작시간,
-                    wrd.work_end_time as 종료시간,
-                    wrd.pass_qty as 합격수량,
-                    wrd.result_detail,
-                    wom.plan_id as 제품코드,
-                    COALESCE(p.product_name, '제품명없음') as 제품명,
-                    COALESCE(emp.employee_name, '작업자') as employee_name,
-                    COALESCE(emp.employee_id, 2) as employee_id
-                FROM tablets.work_order_master wom
-                JOIN tablets.work_result wr ON wom.work_order_no = wr.work_order_no
-                JOIN tablets.work_result_detail wrd ON wr.result_id = wrd.result_id
-                LEFT JOIN tablets.product p ON wom.plan_id = p.product_code
-                LEFT JOIN tablets.employees emp ON CAST(REPLACE(wrd.manager_id, 'd', '') AS UNSIGNED) = emp.employee_id
-                WHERE wrd.code_value = 'completed'
-                AND wrd.process_code = 'p3'
-                AND wom.plan_id = ?
+                WHERE wr.process_group_code = ?
+                AND wrd.process_seq = ?
+                AND wrd.code_value = 'p5'
                 ORDER BY wrd.work_end_time DESC
                 LIMIT 1
-            `, [productCode]);
+            `, [process_group_code, process_seq - 1]);
             
-            if (완료된내포장.length > 0) {
-                console.log('완료된 내포장 발견:', 완료된내포장[0]);
-                
-                // 실제 제품명 적용
-                const realProductName = this.getProductNameFromCode(완료된내포장[0].제품코드);
-                
-                // 해당 실적ID에서 외포장(p5) 작업 확인
-                const 외포장작업 = await this.executeRawQuery(`
-                    SELECT 
-                        wom.work_order_no as 작업번호,
-                        wrd.result_detail,
-                        wrd.process_code as 공정코드,
-                        wrd.code_value as 진행상태,
-                        wr.result_id as 실적ID,
-                        wom.plan_id as 제품코드,
-                        COALESCE(p.product_name, '제품명없음') as 제품명,
-                        COALESCE(wrd.pass_qty, 1000) as input_qty,
-                        'READY' as step_status,
-                        COALESCE(emp.employee_name, '작업자') as employee_name,
-                        COALESCE(emp.employee_id, 2) as employee_id,
-                        COALESCE(emp.position, '작업자') as position,
-                        COALESCE(emp.department_code, '포장부') as department_code
-                    FROM tablets.work_result_detail wrd
-                    JOIN tablets.work_result wr ON wrd.result_id = wr.result_id
-                    JOIN tablets.work_order_master wom ON wr.work_order_no = wom.work_order_no
-                    LEFT JOIN tablets.product p ON wom.plan_id = p.product_code
-                    LEFT JOIN tablets.employees emp ON CAST(REPLACE(wrd.manager_id, 'd', '') AS UNSIGNED) = emp.employee_id
-                    WHERE wr.result_id = ?
-                    AND wrd.process_code = 'p5'
-                    AND wrd.code_value IN ('waiting', 'ready', '대기', '준비')
-                    LIMIT 1
-                `, [완료된내포장[0].실적ID]);
-                
-                if (외포장작업.length > 0) {
-                    console.log('대기중인 외포장 작업 발견:', 외포장작업[0]);
-                    return {
-                        work_order_no: 외포장작업[0].작업번호,
-                        work_id: 외포장작업[0].작업번호,
-                        result_detail_id: 외포장작업[0].result_detail,
-                        result_id: 외포장작업[0].실적ID,
-                        step_status: 'READY',
-                        input_qty: 외포장작업[0].input_qty || 1000,
-                        output_qty: 0,
-                        product_name: realProductName,              // 실제 제품명
-                        final_product_name: realProductName,        // 실제 제품명
-                        employee_name: 외포장작업[0].employee_name,
-                        employee_id: 외포장작업[0].employee_id,
-                        position: 외포장작업[0].position,
-                        department_code: 외포장작업[0].department_code,
-                        product_code: 외포장작업[0].제품코드,
-                        process_code: 'p5'
-                    };
-                } else {
-                    // 외포장 작업 생성 (기존 작업자 정보 유지)
-                    console.log('외포장 작업이 없어서 새로 생성 (기존 작업자 유지)');
-                    await this.executeRawQuery(`
-                        INSERT INTO tablets.work_result_detail (
-                            result_detail, result_id, process_code, code_value, 
-                            work_start_time, pass_qty, process_defective_qty, 
-                            manager_id, eq_type_code
-                        ) VALUES (?, ?, 'p5', 'waiting', NOW(), ?, '0', ?, 'i8')
-                    `, [
-                        `${완료된내포장[0].실적ID}_p5`,
-                        완료된내포장[0].실적ID,
-                        완료된내포장[0].합격수량 || 1000,
-                        완료된내포장[0].employee_id || 2
-                    ]);
-                    
-                    return {
-                        work_order_no: 완료된내포장[0].작업번호,
-                        work_id: 완료된내포장[0].작업번호,
-                        result_detail_id: `${완료된내포장[0].실적ID}_p5`,
-                        result_id: 완료된내포장[0].실적ID,
-                        step_status: 'READY',
-                        input_qty: 완료된내포장[0].합격수량 || 1000,
-                        output_qty: 0,
-                        product_name: realProductName,              // 실제 제품명
-                        final_product_name: realProductName,        // 실제 제품명
-                        employee_name: 완료된내포장[0].employee_name,
-                        employee_id: 완료된내포장[0].employee_id,
-                        product_code: 완료된내포장[0].제품코드,
-                        process_code: 'p5'
-                    };
-                }
+            if (workResult.length === 0) {
+                console.log('이전 공정 완료 실적 없음');
+                return null;
             }
             
-            // 완료된 내포장이 없으면 일반 외포장 작업 조회
-            console.log('완료된 내포장이 없어서 일반 외포장 작업 조회');
-            const result = await this.executeRawQuery(`
-                SELECT 
-                    wom.work_order_no as 작업번호,
-                    wom.plan_id as 제품코드,
-                    COALESCE(p.product_name, '제품명없음') as 제품명,
-                    wrd.code_value as 진행상태,
-                    wrd.pass_qty as input_qty,
-                    0 as output_qty,
-                    COALESCE(emp.employee_name, '작업자') as employee_name,
-                    COALESCE(emp.employee_id, 2) as employee_id,
-                    COALESCE(emp.position, '작업자') as position,
-                    COALESCE(emp.department_code, '포장부') as department_code,
-                    ? as line_id,
-                    ? as line_name,
-                    wrd.result_detail,
-                    wr.result_id,
-                    '외포장' as step_name,
-                    'READY' as step_status
-                FROM tablets.work_order_master wom
-                JOIN tablets.work_result wr ON wom.work_order_no = wr.work_order_no
-                JOIN tablets.work_result_detail wrd ON wr.result_id = wrd.result_id
-                LEFT JOIN tablets.product p ON wom.plan_id = p.product_code
-                LEFT JOIN tablets.employees emp ON CAST(REPLACE(wrd.manager_id, 'd', '') AS UNSIGNED) = emp.employee_id
-                WHERE wrd.process_code = 'p5'
-                AND wrd.code_value IN ('waiting', 'ready', '대기', '준비')
-                AND (wom.plan_id LIKE ? OR p.product_name LIKE ?)
-                ORDER BY wom.order_start_dt ASC
-                LIMIT 1
-            `, [lineId, lineName, `%${productCode}%`, `%${productCode}%`]);
+            const targetResultId = workResult[0].result_id;
+            console.log(`이전 공정 완료된 실적ID: ${targetResultId}`);
             
-            if (result.length > 0) {
-                const work = result[0];
+            // 2-3) 작업실적상세테이블에서 작업번호 가져오기
+            console.log('2-3) 포장공정 작업번호 조회');
+            const workDetail = await this.executeQuery(`
+                SELECT 
+                    wrd.result_detail,
+                    wrd.result_id,
+                    wrd.pass_qty,
+                    wrd.code_value,
+                    CASE 
+                        WHEN wrd.manager_id REGEXP '^[0-9]+$' THEN e.employee_name
+                        ELSE COALESCE(wrd.manager_id, '담당자미정')
+                    END as employee_name
+                FROM tablets.work_result_detail wrd
+                LEFT JOIN tablets.employees e ON wrd.manager_id = CAST(e.employee_id AS CHAR)
+                WHERE wrd.result_id = ?
+                AND wrd.process_seq = ?
+                AND (wrd.process_code LIKE '%Process7%' OR wrd.process_seq = 7)
+                AND wrd.code_value IN ('p1', 'p3', 'p5')
+                ORDER BY 
+                    CASE WHEN wrd.code_value = 'p1' THEN 1
+                         WHEN wrd.code_value = 'p3' THEN 2
+                         WHEN wrd.code_value = 'p5' THEN 3
+                         ELSE 4 END
+                LIMIT 1
+            `, [targetResultId, process_seq]);
+            
+            if (workDetail.length > 0) {
+                console.log('프로젝트 지식에 따른 내포장 작업 발견:', workDetail[0]);
+                const work = workDetail[0];
                 
-                // 실제 제품명 적용
-                const realProductName = this.getProductNameFromCode(work.제품코드);
+                let stepStatus = 'READY';
+                switch(work.code_value) {
+                    case 'p1': stepStatus = 'READY'; break;
+                    case 'p3': stepStatus = 'IN_PROGRESS'; break;
+                    case 'p5': stepStatus = 'COMPLETED'; break;
+                    default: stepStatus = 'READY';
+                }
                 
-                console.log(`외포장 작업번호 조회 성공: ${work.작업번호}, 제품명: ${realProductName}`);
                 return {
-                    work_order_no: work.작업번호,
-                    work_id: work.작업번호,
-                    result_detail_id: work.result_detail,
+                    result_detail: work.result_detail,
+                    work_order_no: work.result_detail,
                     result_id: work.result_id,
-                    step_status: work.step_status,
-                    input_qty: work.input_qty || 1000,
-                    output_qty: work.output_qty || 0,
-                    product_name: realProductName,              // 실제 제품명
-                    final_product_name: realProductName,        // 실제 제품명
+                    product_code: productCode,
+                    product_name: this.getProductNameFromCode(productCode),
+                    process_code: 'Process7',
+                    step_status: stepStatus,
+                    input_qty: work.pass_qty || 1000,
                     employee_name: work.employee_name,
-                    employee_id: work.employee_id,
-                    position: work.position,
-                    department_code: work.department_code,
-                    product_code: work.제품코드,
-                    process_code: 'p5'
+                    db_code_value: work.code_value,
+                    process_group_code: process_group_code,
+                    process_seq: process_seq
                 };
             }
-
-            // 작업이 없으면 새로 생성
-            console.log('기존 외포장 작업이 없어서 새로 생성 (실제 제품명 적용)');
-            return await this.createNewWorkOrder(productCode, lineId);
+            
+            return null; // 작업을 찾지 못함
             
         } catch (error) {
-            console.error(`외포장 작업번호 조회 실패 (실제 제품명 적용):`, error);
-            throw error;
+            console.error('프로젝트 지식에 따른 내포장 조회 실패:', error);
+            return null;
         }
     }
 
-    // 내포장 작업 시작 워크플로우
-    async startInnerPackagingWorkflow(workOrderNo, productCode, processGroupCode) {
+    // 외포장 작업번호 조회 (Process7 = 포장공정 전체) - 제품코드 통일
+
+// 외포장도 동일하게 수정
+async getOuterWorkByLine(lineId, lineName) {
+    try {
+        console.log(`=== 외포장 작업번호 조회 시작: ${lineId}, ${lineName} ===`);
+        
+        let productCode = this.extractProductCodeFromLine(lineName);
+        console.log(`제품코드: ${productCode}`);
+        
+        // 🔥 수정: OR 조건 완전 제거 - 정확한 제품코드만 조회
+        const outerWork = await this.executeQuery(`
+            SELECT 
+                wrd.result_detail,
+                wrd.result_id,
+                wrd.process_code,
+                wrd.code_value,
+                wrd.pass_qty,
+                wrd.work_start_time,
+                wrd.work_end_time,
+                wrd.process_seq,
+                CASE 
+                    WHEN wrd.manager_id IS NULL OR wrd.manager_id = '' THEN '김홍인'
+                    WHEN wrd.manager_id REGEXP '^[0-9]+$' THEN 
+                        COALESCE(e.employee_name, CONCAT('ID:', wrd.manager_id))
+                    ELSE wrd.manager_id
+                END as employee_name
+            FROM tablets.work_result_detail wrd
+            LEFT JOIN tablets.employees e ON wrd.manager_id = CAST(e.employee_id AS CHAR)
+            WHERE (wrd.process_code LIKE '%Process7%' OR wrd.process_seq = 7)
+            AND wrd.result_detail IS NOT NULL
+            AND wrd.process_code LIKE ?  -- 🔥 수정: 정확한 제품코드만 매칭 (OR 조건 제거)
+            AND wrd.code_value IN ('p1', 'p3', 'p5')  
+            ORDER BY 
+                CASE WHEN wrd.code_value = 'p1' THEN 1  
+                     WHEN wrd.code_value = 'p3' THEN 2  
+                     WHEN wrd.code_value = 'p5' THEN 3  
+                     ELSE 4 END,
+                wrd.work_start_time DESC
+            LIMIT 5
+        `, [`%${productCode}%`]);  // BJA-DR-60이면 %BJA-DR-60%로만 검색
+        
+        console.log(`검색 조건: process_code LIKE '%${productCode}%'`);
+        console.log(`검색 결과: ${outerWork.length}건`);
+        
+        if (outerWork.length > 0) {
+            console.log('포장공정(Process7) 작업 발견:', outerWork[0]);
+            console.log('매칭된 process_code:', outerWork[0].process_code);
+            
+            const work = outerWork[0];
+            
+            let stepStatus = 'READY';
+            let processType = '포장';
+            let message = '';
+            
+            switch(work.code_value) {
+                case 'p1':
+                    stepStatus = 'READY';
+                    processType = '포장대기';
+                    message = '포장 작업 대기중. 내포장부터 시작하세요.';
+                    break;
+                case 'p3':
+                    stepStatus = 'IN_PROGRESS';
+                    processType = '포장진행';
+                    message = '포장 작업 진행중';
+                    break;
+                case 'p5':
+                    stepStatus = 'COMPLETED';
+                    processType = '포장완료';
+                    message = '포장 작업 완료됨';
+                    break;
+                default:
+                    stepStatus = 'UNKNOWN';
+                    processType = '상태미확인';
+                    message = `알 수 없는 상태: ${work.code_value}`;
+            }
+            
+            return {
+                result_detail: work.result_detail,
+                work_order_no: work.result_detail,
+                result_id: work.result_id,
+                product_code: productCode,
+                product_name: this.getProductNameFromCode(productCode),
+                process_code: work.process_code,
+                step_status: stepStatus,
+                input_qty: work.pass_qty || 1000,
+                employee_name: work.employee_name,
+                db_code_value: work.code_value,
+                work_start_time: work.work_start_time,
+                work_end_time: work.work_end_time,
+                process_seq: work.process_seq,
+                process_type: processType,
+                message: message,
+                available_next_step: this.getNextStep(work.code_value)
+            };
+        }
+        
+        // 조회된 데이터가 없을 경우
+        console.log(`${productCode} 제품의 포장 작업이 없습니다.`);
+        return {
+            result_detail: null,
+            work_order_no: null,
+            result_id: null,
+            product_code: productCode,
+            product_name: this.getProductNameFromCode(productCode),
+            process_code: `${productCode}Process7`,
+            step_status: 'NO_DATA',
+            input_qty: 0,
+            employee_name: '김홍인',
+            message: `해당 라인(${productCode})의 포장 작업이 없습니다.`,
+            process_type: '포장'
+        };
+        
+    } catch (error) {
+        console.error('외포장 작업번호 조회 실패:', error);
+        const productCode = this.extractProductCodeFromLine(lineName);
+        return {
+            result_detail: null,
+            work_order_no: null,
+            result_id: null,
+            product_code: productCode,
+            product_name: this.getProductNameFromCode(productCode),
+            process_code: 'Process7',
+            step_status: 'ERROR',
+            input_qty: 0,
+            employee_name: '김홍인',
+            error: error.message,
+            process_type: '포장'
+        };
+    }
+}
+
+// 1. 작업번호 조회 시 담당자 정보 개선
+async getInnerWorkByLine(lineId, lineName) {
+    try {
+        console.log(`=== 내포장 작업번호 조회 시작: ${lineId}, ${lineName} ===`);
+        
+        let productCode = this.extractProductCodeFromLine(lineName);
+        console.log(`추출된 제품코드: ${productCode}`);
+        
+        // 개선된 담당자 정보 조회 쿼리
+        const innerWork = await this.executeQuery(`
+            SELECT 
+                wrd.result_detail,
+                wrd.result_id,
+                wrd.process_code,
+                wrd.code_value,
+                wrd.pass_qty,
+                wrd.work_start_time,
+                wrd.work_end_time,
+                wrd.process_seq,
+                wrd.manager_id,
+                -- 개선된 담당자 정보 조회
+                CASE 
+                    WHEN wrd.manager_id IS NULL OR wrd.manager_id = '' THEN '김홍인'  -- 기본 담당자
+                    WHEN wrd.manager_id REGEXP '^[0-9]+$' THEN 
+                        COALESCE(e.employee_name, CONCAT('ID:', wrd.manager_id))
+                    ELSE wrd.manager_id
+                END as employee_name,
+                -- 담당자 상태 확인용
+                e.employee_name as db_employee_name,
+                e.employment_status
+            FROM tablets.work_result_detail wrd
+            LEFT JOIN tablets.employees e ON wrd.manager_id = CAST(e.employee_id AS CHAR)
+            WHERE (wrd.process_code LIKE '%Process7%' OR wrd.process_seq = 7)
+            AND wrd.result_detail IS NOT NULL
+            AND (wrd.process_code LIKE ? OR wrd.process_code LIKE 'BJA-STD-10%')
+            AND wrd.code_value IN ('p1', 'p3', 'p5')  
+            ORDER BY 
+                CASE WHEN wrd.code_value = 'p1' THEN 1  
+                     WHEN wrd.code_value = 'p3' THEN 2  
+                     WHEN wrd.code_value = 'p5' THEN 3  
+                     ELSE 4 END,
+                wrd.work_start_time DESC
+            LIMIT 5
+        `, [`%${productCode}%`]);
+        
+        if (innerWork.length > 0) {
+            console.log('포장공정(Process7) 내포장 작업 발견:', innerWork[0]);
+            console.log('담당자 디버깅 정보:', {
+                manager_id: innerWork[0].manager_id,
+                employee_name: innerWork[0].employee_name,
+                db_employee_name: innerWork[0].db_employee_name,
+                employment_status: innerWork[0].employment_status
+            });
+            
+            const work = innerWork[0];
+            
+            let stepStatus = 'READY';
+            switch(work.code_value) {
+                case 'p1': stepStatus = 'READY'; break;        
+                case 'p3': stepStatus = 'IN_PROGRESS'; break;  
+                case 'p5': stepStatus = 'COMPLETED'; break;    
+                default: stepStatus = 'READY';
+            }
+            
+            return {
+                result_detail: work.result_detail,
+                work_order_no: work.result_detail,
+                result_id: work.result_id,
+                product_code: productCode,
+                product_name: this.getProductNameFromCode(productCode),
+                process_code: work.process_code,
+                step_status: stepStatus,
+                input_qty: work.pass_qty || 1000,
+                employee_name: work.employee_name,
+                db_code_value: work.code_value,
+                work_start_time: work.work_start_time,
+                work_end_time: work.work_end_time,
+                process_seq: work.process_seq,
+                available_next_step: this.getNextStep(work.code_value),
+                // 디버깅 정보 추가
+                debug_manager_info: {
+                    manager_id: work.manager_id,
+                    db_employee_name: work.db_employee_name,
+                    employment_status: work.employment_status
+                }
+            };
+        }
+        
+        // 조회된 데이터가 없음
+        return {
+            result_detail: null,
+            work_order_no: null,
+            result_id: null,
+            product_code: productCode,
+            product_name: this.getProductNameFromCode(productCode),
+            process_code: 'Process7',
+            step_status: 'NO_DATA',
+            input_qty: 0,
+            employee_name: '김홍인',  // 기본 담당자
+            message: '해당 라인의 내포장 작업이 없습니다.'
+        };
+        
+    } catch (error) {
+        console.error('내포장 작업번호 조회 실패:', error);
+        const productCode = this.extractProductCodeFromLine(lineName);
+        return {
+            result_detail: null,
+            work_order_no: null,
+            result_id: null,
+            product_code: productCode,
+            product_name: this.getProductNameFromCode(productCode),
+            process_code: 'Process7',
+            step_status: 'ERROR',
+            input_qty: 0,
+            employee_name: '김홍인',  // 기본 담당자
+            error: error.message
+        };
+    }
+}
+
+// 3단계에서 다음 단계 반환
+getNextStep(currentCodeValue) {
+    const nextSteps = {
+        'p1': 'p3',  // 대기중 → 진행중
+        'p3': 'p5',  // 진행중 → 완료
+        'p5': null   // 완료 → 없음
+    };
+    
+    return nextSteps[currentCodeValue] || null;
+}
+
+// 내포장 작업 시작: p1 → p3
+async startInnerPackaging(resultDetail, startTime, managerId, passQty) {
+    try {
+        console.log(`=== 내포장 작업 시작: ${resultDetail}, 담당자: ${managerId} ===`);
+        
+        // 현재 상태가 p1(대기중)인지 확인
+        const result = await this.executeQuery(`
+            UPDATE tablets.work_result_detail
+            SET 
+                code_value = 'p3',      -- 대기중 → 진행중
+                work_start_time = ?,        
+                pass_qty = ?,             
+                manager_id = ?           
+            WHERE result_detail = ?
+            AND (process_code LIKE '%Process7%' OR process_seq = 7)
+            AND code_value = 'p1'      -- 대기중 상태에서만 시작 가능
+        `, [startTime || new Date(), passQty, managerId, resultDetail]);
+        
+        console.log(`내포장 작업 시작 완료: ${result.affectedRows}건 업데이트 (p1 → p3)`);
+        
+        if (result.affectedRows === 0) {
+            const currentStatus = await this.executeQuery(`
+                SELECT code_value FROM tablets.work_result_detail
+                WHERE result_detail = ? 
+                AND (process_code LIKE '%Process7%' OR process_seq = 7)
+            `, [resultDetail]);
+            
+            if (currentStatus.length > 0) {
+                const status = currentStatus[0].code_value;
+                return {
+                    success: false,
+                    message: `작업이 이미 ${status} 상태입니다. p1(대기중) 상태에서만 시작할 수 있습니다.`,
+                    current_status: status
+                };
+            } else {
+                return {
+                    success: false,
+                    message: '해당 내포장 작업번호를 찾을 수 없습니다.',
+                    result_detail: resultDetail
+                };
+            }
+        }
+        
+        return {
+            success: true,
+            message: '내포장 작업이 시작되었습니다 (p1 → p3)',
+            data: { 
+                result_detail: resultDetail, 
+                status: 'p3',
+                previous_status: 'p1',
+                start_time: startTime || new Date(),
+                manager_id: managerId
+            }
+        };
+        
+    } catch (error) {
+        console.error('내포장 작업 시작 실패:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// 내포장 작업 완료: p3 → p5
+async completeInnerPackaging(resultDetail, endTime, passQty, managerId) {
+    try {
+        console.log(`=== 내포장 작업 완료: ${resultDetail}, 담당자: ${managerId} ===`);
+        
+        // 현재 상태가 p3(진행중)인지 확인
+        const result = await this.executeQuery(`
+            updateWorkResultDetailEndTim tablets.work_result_detail
+            SET 
+                code_value = 'p5',      -- 진행중 → 완료
+                pass_qty = ?,
+                manager_id = ?
+            WHERE result_detail = ?
+            AND (process_code LIKE '%Process7%' OR process_seq = 7)
+            AND code_value = 'p3'      -- 진행중 상태에서만 완료 가능
+        `, [endTime || new Date(), passQty || 1000, managerId, resultDetail]);
+        
+        console.log(`내포장 작업 완료: ${result.affectedRows}건 업데이트 (p3 → p5)`);
+        
+        if (result.affectedRows === 0) {
+            const currentStatus = await this.executeQuery(`
+                SELECT code_value FROM tablets.work_result_detail
+                WHERE result_detail = ? 
+                AND (process_code LIKE '%Process7%' OR process_seq = 7)
+            `, [resultDetail]);
+            
+            if (currentStatus.length > 0) {
+                const status = currentStatus[0].code_value;
+                return {
+                    success: false,
+                    message: `작업이 ${status} 상태입니다. p3(진행중) 상태에서만 완료할 수 있습니다.`,
+                    current_status: status
+                };
+            } else {
+                return {
+                    success: false,
+                    message: '해당 내포장 작업번호를 찾을 수 없습니다.',
+                    result_detail: resultDetail
+                };
+            }
+        }
+        
+        return {
+            success: true,
+            message: '내포장 작업이 완료되었습니다 (p3 → p5)',
+            data: { 
+                result_detail: resultDetail,
+                status: 'p5',
+                previous_status: 'p3',
+                end_time: endTime || new Date(),
+                pass_qty: passQty || 1000,
+                manager_id: managerId
+            }
+        };
+        
+    } catch (error) {
+        console.error('내포장 작업 완료 실패:', error);
+        return { 
+            success: false, 
+            error: error.message,
+            details: '내포장 작업 완료 중 오류가 발생했습니다.'
+        };
+    }
+}
+
+    // 외포장 작업 시작 - Process7에서 p5→p7
+    async startOuterPackaging(resultDetail, endTime, managerId, passQty) {
         try {
-            console.log(`내포장 작업 시작 워크플로우: ${workOrderNo}, 제품: ${productCode}`);
+            console.log(`=== 외포장 작업 시작: ${resultDetail}, 담당자: ${managerId} ===`);
             
-            // 2-4) 작업시작 시 - 내포장시 추가로 코드 만들기
-            const result = await this.executeRawQuery(`
-                UPDATE tablets.work_result_detail wrd
-                JOIN tablets.work_result wr ON wrd.result_id = wr.result_id
-                JOIN tablets.work_order_master wom ON wr.work_order_no = wom.work_order_no
+            // 담당자 유효성 검사 - 문자열도 허용
+            let validManagerId = managerId;
+            if (managerId) {
+                if (managerId.toString().match(/^\d+$/)) {
+                    const employeeCheck = await this.executeQuery(`
+                        SELECT employee_id, employee_name 
+                        FROM tablets.employees 
+                        WHERE employee_id = ?
+                    `, [managerId]);
+                    
+                    if (employeeCheck.length === 0) {
+                        console.warn(`담당자 ID ${managerId}를 찾을 수 없거나 비활성 상태입니다.`);
+                        validManagerId = managerId; // 그래도 저장
+                    } else {
+                        console.log(`담당자 확인됨: ${employeeCheck[0].employee_name}`);
+                    }
+                } else {
+                    console.log(`담당자 이름으로 저장: ${managerId}`);
+                }
+            }
+            
+            // Process7에서 외포장 시작: p5 → p7
+            const result = await this.executeQuery(`
+                UPDATE tablets.work_result_detail
                 SET 
-                    wrd.code_value = 'in_progress',
-                    wrd.work_start_time = NOW()
-                WHERE wom.work_order_no = ?
-                AND wrd.process_code = 'p3'
-            `, [workOrderNo]);
+                    code_value = 'p7',
+                    pass_qty = ?,
+                    manager_id = ?
+                WHERE result_detail = ?
+                AND (process_code LIKE '%Process7%' OR process_seq = 7)
+                AND code_value = 'p5'
+            `, [passQty || 1000, validManagerId, resultDetail]);
             
-            console.log(`내포장 작업 시작 업데이트 완료: ${workOrderNo} (${result.affectedRows}건)`);
+            console.log(`외포장 작업 시작 완료: ${result.affectedRows}건 업데이트`);
+            
+            if (result.affectedRows === 0) {
+                const currentStatus = await this.executeQuery(`
+                    SELECT code_value FROM tablets.work_result_detail
+                    WHERE result_detail = ? 
+                    AND (process_code LIKE '%Process7%' OR process_seq = 7)
+                `, [resultDetail]);
+                
+                if (currentStatus.length > 0) {
+                    const status = currentStatus[0].code_value;
+                    return {
+                        success: false,
+                        message: `포장 작업이 ${status} 상태입니다. p5(내포장완료) 상태에서만 외포장을 시작할 수 있습니다.`,
+                        current_status: status
+                    };
+                } else {
+                    return {
+                        success: false,
+                        message: '해당 작업번호를 찾을 수 없습니다. 내포장을 먼저 완료해주세요.',
+                        result_detail: resultDetail
+                    };
+                }
+            }
             
             return {
                 success: true,
-                message: '내포장 작업이 시작되었습니다.',
-                data: {
-                    work_order_no: workOrderNo,
-                    product_code: productCode,
-                    process_group_code: processGroupCode,
-                    process_code: 'p3',
-                    status: 'in_progress',
-                    start_time: new Date()
+                message: '외포장 작업이 시작되었습니다',
+                data: { 
+                    result_detail: resultDetail, 
+                    status: 'p7',
+                    pass_qty: passQty || 1000,
+                    manager_id: validManagerId
                 }
             };
             
         } catch (error) {
-            console.error(`내포장 작업 시작 워크플로우 실패 (${workOrderNo}):`, error);
-            return {
-                success: false,
-                error: error.message,
-                data: null
-            };
+            console.error('외포장 작업 시작 실패:', error);
+            return { success: false, error: error.message };
         }
     }
 
-    // 내포장 작업 완료 워크플로우
-    async completeInnerPackagingWorkflow(workOrderNo, passQty, defectiveQty) {
+    // 외포장 작업 완료 - Process7에서 p7→p9
+    async completeOuterPackaging(resultDetail, endTime, passQty, managerId) {
         try {
-            console.log(`내포장 작업 완료 워크플로우: ${workOrderNo}`);
+            console.log(`=== 외포장 작업 완료: ${resultDetail}, 담당자: ${managerId} ===`);
             
-            // 내포장 완료시 실적 상세 테이블에 시작시간 업데이트 하고
-            const result = await this.executeRawQuery(`
-                UPDATE tablets.work_result_detail wrd
-                JOIN tablets.work_result wr ON wrd.result_id = wr.result_id
-                JOIN tablets.work_order_master wom ON wr.work_order_no = wom.work_order_no
+            // 담당자 유효성 검사 - 문자열도 허용
+            let validManagerId = managerId;
+            if (managerId) {
+                if (managerId.toString().match(/^\d+$/)) {
+                    const employeeCheck = await this.executeQuery(`
+                        SELECT employee_id, employee_name 
+                        FROM tablets.employees 
+                        WHERE employee_id = ? AND employment_status = 'ACTIVE'
+                    `, [managerId]);
+                    
+                    if (employeeCheck.length === 0) {
+                        console.warn(`담당자 ID ${managerId}를 찾을 수 없거나 비활성 상태입니다.`);
+                        validManagerId = managerId; // 그래도 저장
+                    } else {
+                        console.log(`담당자 확인됨: ${employeeCheck[0].employee_name}`);
+                    }
+                } else {
+                    console.log(`담당자 이름으로 저장: ${managerId}`);
+                }
+            }
+            
+            // Process7에서 외포장 완료: p7 → p9
+            const result = await this.executeQuery(`
+                UPDATE tablets.work_result_detail
                 SET 
-                    wrd.code_value = 'completed',
-                    wrd.work_end_time = NOW(),
-                    wrd.pass_qty = ?,
-                    wrd.process_defective_qty = ?
-                WHERE wom.work_order_no = ?
-                AND wrd.process_code = 'p3'
-            `, [passQty, defectiveQty || '0', workOrderNo]);
+                    code_value = 'p9',
+                    work_end_time = ?,
+                    pass_qty = ?,
+                    manager_id = ?
+                WHERE result_detail = ?
+                AND (process_code LIKE '%Process7%' OR process_seq = 7)
+                AND code_value = 'p7'
+            `, [endTime || new Date(), passQty || 1000, validManagerId, resultDetail]);
             
-            console.log(`내포장 완료 업데이트 완료: ${workOrderNo} (${result.affectedRows}건)`);
+            console.log(`외포장 작업 완료: ${result.affectedRows}건 업데이트`);
+            
+            if (result.affectedRows === 0) {
+                const currentStatus = await this.executeQuery(`
+                    SELECT code_value FROM tablets.work_result_detail
+                    WHERE result_detail = ? 
+                    AND (process_code LIKE '%Process7%' OR process_seq = 7)
+                `, [resultDetail]);
+                
+                if (currentStatus.length > 0) {
+                    const status = currentStatus[0].code_value;
+                    return {
+                        success: false,
+                        message: `포장 작업이 ${status} 상태입니다. p7(외포장진행중) 상태에서만 완료할 수 있습니다.`,
+                        current_status: status
+                    };
+                } else {
+                    return {
+                        success: false,
+                        message: '해당 외포장 작업번호를 찾을 수 없습니다.',
+                        result_detail: resultDetail
+                    };
+                }
+            }
             
             return {
                 success: true,
-                message: '내포장 작업이 완료되었습니다.',
-                data: {
-                    work_order_no: workOrderNo,
-                    process_code: 'p3',
-                    status: 'completed',
-                    pass_qty: passQty,
-                    defective_qty: defectiveQty,
-                    end_time: new Date()
+                message: '외포장 작업이 완료되었습니다. 포장공정이 모두 완료되었습니다.',
+                data: { 
+                    result_detail: resultDetail, 
+                    status: 'p9',
+                    end_time: endTime || new Date(),
+                    pass_qty: passQty || 1000,
+                    manager_id: validManagerId
                 }
             };
             
         } catch (error) {
-            console.error(`내포장 작업 완료 워크플로우 실패 (${workOrderNo}):`, error);
-            return {
-                success: false,
-                error: error.message,
-                data: null
-            };
+            console.error('외포장 작업 완료 실패:', error);
+            return { success: false, error: error.message };
         }
     }
 
-    // 외포장 작업 시작 워크플로우
-    async startOuterPackagingWorkflow(workOrderNo, productCode, processGroupCode, innerOutputQty) {
+    // Process7 기반 작업 설정
+    async setupInnerPackagingWork(resultDetail, passQty, managerId) {
         try {
-            console.log(`외포장 작업 시작 워크플로우: ${workOrderNo}, 내포장 수량: ${innerOutputQty}`);
+            console.log(`=== Process7 포장 작업 설정: ${resultDetail} ===`);
             
-            const result = await this.executeRawQuery(`
-                UPDATE tablets.work_result_detail wrd
-                JOIN tablets.work_result wr ON wrd.result_id = wr.result_id
-                JOIN tablets.work_order_master wom ON wr.work_order_no = wom.work_order_no
+            const result = await this.executeQuery(`
+                UPDATE tablets.work_result_detail
                 SET 
-                    wrd.code_value = 'in_progress',
-                    wrd.work_start_time = NOW(),
-                    wrd.pass_qty = ?
-                WHERE wom.work_order_no = ?
-                AND wrd.process_code = 'p5'
-            `, [innerOutputQty || 1000, workOrderNo]);
+                    code_value = 'p1',
+                    work_start_time = NOW(),
+                    pass_qty = ?,
+                    manager_id = ?
+                WHERE result_detail = ?
+                AND (process_code LIKE '%Process7%' OR process_seq = 7)
+            `, [passQty || 1000, managerId, resultDetail]);
             
-            console.log(`외포장 작업 시작 업데이트 완료: ${workOrderNo} (${result.affectedRows}건)`);
+            console.log(`Process7 포장 작업 설정 완료: ${result.affectedRows}건 업데이트`);
             
             return {
-                success: true,
-                message: '외포장 작업이 시작되었습니다.',
+                success: result.affectedRows > 0,
+                message: result.affectedRows > 0 ? 'Process7 포장 작업이 설정되었습니다 (p1=대기중)' : '작업번호를 찾을 수 없습니다',
                 data: {
-                    work_order_no: workOrderNo,
-                    product_code: productCode,
-                    process_group_code: processGroupCode,
-                    process_code: 'p5',
-                    status: 'in_progress',
-                    inner_output_qty: innerOutputQty,
-                    start_time: new Date()
+                    result_detail: resultDetail,
+                    status: 'p1',
+                    pass_qty: passQty || 1000,
+                    manager_id: managerId,
+                    work_start_time: new Date()
                 }
             };
             
         } catch (error) {
-            console.error(`외포장 작업 시작 워크플로우 실패 (${workOrderNo}):`, error);
-            return {
-                success: false,
-                error: error.message,
-                data: null
-            };
+            console.error('Process7 포장 작업 설정 실패:', error);
+            return { success: false, error: error.message };
         }
     }
 
-    // 외포장 작업 완료 워크플로우
-    async completeOuterPackagingWorkflow(workOrderNo, passQty, defectiveQty) {
+    // 작업 상태 조회 (Process7 기반) - p1,p3,p5 3단계만 사용
+    async getWorkStatus(resultDetail) {
         try {
-            console.log(`외포장 작업 완료 워크플로우: ${workOrderNo}`);
+            const result = await this.executeQuery(`
+                SELECT 
+                    wrd.result_detail,
+                    wrd.result_id,
+                    wrd.process_code,
+                    wrd.code_value,
+                    wrd.work_start_time,
+                    wrd.work_end_time,
+                    wrd.pass_qty,
+                    wrd.process_seq,
+                    CASE 
+                        WHEN wrd.manager_id REGEXP '^[0-9]+$' THEN e.employee_name
+                        ELSE COALESCE(wrd.manager_id, '담당자미정')
+                    END as employee_name,
+                    CASE wrd.code_value 
+                        WHEN 'p1' THEN '포장대기'
+                        WHEN 'p3' THEN '포장진행중'
+                        WHEN 'p5' THEN '포장완료'
+                        ELSE wrd.code_value
+                    END as status_name,
+                    CASE wrd.code_value
+                        WHEN 'p1' THEN '포장대기'
+                        WHEN 'p3' THEN '포장진행'
+                        WHEN 'p5' THEN '포장완료'
+                        ELSE '포장공정'
+                    END as process_type,
+                    CASE wrd.code_value
+                        WHEN 'p1' THEN '작업 대기중'
+                        WHEN 'p3' THEN '작업 진행중'
+                        WHEN 'p5' THEN '작업 완료됨'
+                        ELSE '상태 확인 필요'
+                    END as status_description,
+                    CASE wrd.code_value
+                        WHEN 'p1' THEN 'p3'
+                        WHEN 'p3' THEN 'p5'
+                        WHEN 'p5' THEN NULL
+                        ELSE NULL
+                    END as next_possible_status
+                FROM tablets.work_result_detail wrd
+                LEFT JOIN tablets.employees e ON wrd.manager_id = CAST(e.employee_id AS CHAR)
+                WHERE wrd.result_detail = ?
+                AND (wrd.process_code LIKE '%Process7%' OR wrd.process_seq = 7)
+                AND wrd.code_value IN ('p1', 'p3', 'p5')  -- 실제 사용하는 3단계만
+                ORDER BY wrd.process_seq
+            `, [resultDetail]);
             
-            // 3-2) 외포장공정 종료 시
-            const result = await this.executeRawQuery(`
-                UPDATE tablets.work_result_detail wrd
-                JOIN tablets.work_result wr ON wrd.result_id = wr.result_id
-                JOIN tablets.work_order_master wom ON wr.work_order_no = wom.work_order_no
-                SET 
-                    wrd.code_value = 'inspection',
-                    wrd.work_end_time = NOW(),
-                    wrd.pass_qty = ?,
-                    wrd.process_defective_qty = ?
-                WHERE wom.work_order_no = ?
-                AND wrd.process_code = 'p5'
-            `, [passQty, defectiveQty || '0', workOrderNo]);
+            return result.length > 0 ? result : null;
+        } catch (error) {
+            console.error('작업 상태 조회 실패:', error);
+            return null;
+        }
+    }
+
+    // 외포장용 작업 상태 조회 (내포장/외포장 구분을 위한 추가 메서드)
+    async getPackagingWorkStatus(resultDetail) {
+        try {
+            const result = await this.executeQuery(`
+                SELECT 
+                    wrd.result_detail,
+                    wrd.result_id,
+                    wrd.process_code,
+                    wrd.code_value,
+                    wrd.work_start_time,
+                    wrd.work_end_time,
+                    wrd.pass_qty,
+                    wrd.process_seq,
+                    CASE 
+                        WHEN wrd.manager_id REGEXP '^[0-9]+$' THEN e.employee_name
+                        ELSE COALESCE(wrd.manager_id, '담당자미정')
+                    END as employee_name,
+                    CASE wrd.code_value 
+                        WHEN 'p1' THEN '포장대기'
+                        WHEN 'p3' THEN '포장진행중'
+                        WHEN 'p5' THEN '포장완료'
+                        ELSE wrd.code_value
+                    END as status_name,
+                    CASE wrd.code_value
+                        WHEN 'p1' THEN '대기'
+                        WHEN 'p3' THEN '진행'
+                        WHEN 'p5' THEN '완료'
+                        ELSE '기타'
+                    END as simple_status,
+                    CASE 
+                        WHEN wrd.code_value = 'p1' THEN TRUE
+                        WHEN wrd.code_value = 'p3' THEN TRUE
+                        ELSE FALSE
+                    END as can_work_inner,
+                    CASE 
+                        WHEN wrd.code_value = 'p5' THEN TRUE
+                        ELSE FALSE
+                    END as can_work_outer,
+                    CASE wrd.code_value
+                        WHEN 'p1' THEN '내포장 시작 가능'
+                        WHEN 'p3' THEN '내포장 진행중 - 완료 가능'
+                        WHEN 'p5' THEN '내포장 완료 - 외포장 가능'
+                        ELSE '상태 확인 필요'
+                    END as work_guidance
+                FROM tablets.work_result_detail wrd
+                LEFT JOIN tablets.employees e ON wrd.manager_id = CAST(e.employee_id AS CHAR)
+                WHERE wrd.result_detail = ?
+                AND (wrd.process_code LIKE '%Process7%' OR wrd.process_seq = 7)
+                AND wrd.code_value IN ('p1', 'p3', 'p5')
+                ORDER BY wrd.work_start_time DESC
+                LIMIT 1
+            `, [resultDetail]);
             
-            console.log(`외포장 완료 업데이트 완료 (검사중): ${workOrderNo} (${result.affectedRows}건)`);
+            return result.length > 0 ? result[0] : null;
+        } catch (error) {
+            console.error('포장 작업 상태 조회 실패:', error);
+            return null;
+        }
+    }
+
+    // 특정 작업번호의 현재 상태 간단 조회
+    async getCurrentStatus(resultDetail) {
+        try {
+            const result = await this.executeQuery(`
+                SELECT 
+                    code_value,
+                    CASE code_value 
+                        WHEN 'p1' THEN '대기중'
+                        WHEN 'p3' THEN '진행중'
+                        WHEN 'p5' THEN '완료'
+                        ELSE '알수없음'
+                    END as status_korean
+                FROM tablets.work_result_detail
+                WHERE result_detail = ?
+                AND (process_code LIKE '%Process7%' OR process_seq = 7)
+                AND code_value IN ('p1', 'p3', 'p5')
+                LIMIT 1
+            `, [resultDetail]);
+            
+            return result.length > 0 ? result[0] : null;
+        } catch (error) {
+            console.error('현재 상태 조회 실패:', error);
+            return null;
+        }
+    }
+
+    // 작업 가능 여부 확인
+    async checkWorkAvailability(resultDetail, workType) {
+        try {
+            const status = await this.getCurrentStatus(resultDetail);
+            
+            if (!status) {
+                return {
+                    available: false,
+                    reason: '작업번호를 찾을 수 없습니다.',
+                    current_status: null
+                };
+            }
+            
+            const currentValue = status.code_value;
+            
+            // 내포장 작업 가능 여부
+            if (workType === 'inner') {
+                if (currentValue === 'p1') {
+                    return {
+                        available: true,
+                        action: 'start',
+                        message: '내포장 시작 가능',
+                        transition: 'p1 → p3',
+                        current_status: status
+                    };
+                } else if (currentValue === 'p3') {
+                    return {
+                        available: true,
+                        action: 'complete',
+                        message: '내포장 완료 가능',
+                        transition: 'p3 → p5',
+                        current_status: status
+                    };
+                } else if (currentValue === 'p5') {
+                    return {
+                        available: false,
+                        reason: '내포장이 이미 완료되었습니다.',
+                        current_status: status
+                    };
+                }
+            }
+            
+            // 외포장 작업 가능 여부 (현재는 p5 완료 상태에서만 가능한 것으로 가정)
+            if (workType === 'outer') {
+                if (currentValue === 'p5') {
+                    return {
+                        available: true,
+                        action: 'start',
+                        message: '외포장 시작 가능 (내포장 완료됨)',
+                        note: '외포장 워크플로우는 별도 구현 필요',
+                        current_status: status
+                    };
+                } else {
+                    return {
+                        available: false,
+                        reason: '내포장을 먼저 완료해야 합니다.',
+                        current_status: status
+                    };
+                }
+            }
             
             return {
-                success: true,
-                message: '외포장 작업이 완료되었습니다. 모든 포장 단계가 완료되었습니다.',
-                data: {
-                    work_order_no: workOrderNo,
-                    process_code: 'p5',
-                    status: 'inspection',
-                    pass_qty: passQty,
-                    defective_qty: defectiveQty,
-                    end_time: new Date(),
-                    all_packaging_completed: true
-                }
+                available: false,
+                reason: '알 수 없는 작업 타입입니다.',
+                current_status: status
             };
             
         } catch (error) {
-            console.error(`외포장 작업 완료 워크플로우 실패 (${workOrderNo}):`, error);
+            console.error('작업 가능 여부 확인 실패:', error);
             return {
-                success: false,
-                error: error.message,
-                data: null
+                available: false,
+                reason: '상태 확인 중 오류가 발생했습니다.',
+                error: error.message
             };
         }
     }
 
-    // BigInt를 Number로 변환
+    // 외포장 단계 생성 제거 (Process7에서 code_value로 관리)
+    async autoCreateOuterStep(innerResultDetail, passQty) {
+        console.log(`Process7에서는 별도 외포장 단계 생성 불필요: ${innerResultDetail}`);
+        console.log('내포장 완료 (p5) 후 외포장 관련 별도 처리 필요 시 여기서 구현');
+        
+        // 실제 외포장 워크플로우가 어떻게 되는지에 따라 여기서 처리
+        // 예: 새로운 외포장 레코드 생성, 상태 변경 등
+        
+        return {
+            success: true,
+            message: 'Process7에서는 p5 완료 후 외포장 처리',
+            data: {
+                inner_result_detail: innerResultDetail,
+                pass_qty: passQty,
+                status: 'inner_completed_ready_for_outer'
+            }
+        };
+    }
+
+    async autoCreateOuterStepForOuter(innerResultDetail, resultId, passQty) {
+        console.log(`Process7에서는 별도 외포장 단계 생성 불필요: ${innerResultDetail}`);
+        console.log('내포장 완료 (p5) 후 외포장 관련 별도 처리 필요 시 여기서 구현');
+        
+        return {
+            success: true,
+            message: 'Process7에서는 p5 완료 후 외포장 처리',
+            data: {
+                inner_result_detail: innerResultDetail,
+                result_id: resultId,
+                pass_qty: passQty,
+                status: 'inner_completed_ready_for_outer'
+            }
+        };
+    }
+
+    // BigInt 변환
     convertBigIntToNumber(data) {
         if (Array.isArray(data)) {
             return data.map(item => this.convertBigIntToNumber(item));
@@ -903,330 +1313,38 @@ class PackageService {
         }
         return data;
     }
-
-    // 기존 package_work 테이블 관련 함수들 (실제 제품명 적용)
-    async getWorkList(packageType = null, lineId = null, lineName = null) {
-        try {
-            console.log('package_work 테이블에서 작업 목록 조회 (실제 제품명 적용):', { packageType, lineId, lineName });
-            
-            let query = `
-                SELECT 
-                    pw.work_id,
-                    pw.work_order_no,
-                    pw.order_detail_id,
-                    pw.line_id,
-                    pw.work_line,
-                    pw.work_step,
-                    pw.step_name,
-                    pw.step_status,
-                    pw.input_qty,
-                    pw.output_qty,
-                    pw.eq_code,
-                    pw.start_time,
-                    pw.end_time,
-                    pw.employee_id,
-                    COALESCE(emp.employee_name, pw.employee_name, '작업자') as employee_name,
-                    COALESCE(emp.position, '작업자') as position,
-                    COALESCE(emp.department_code, '포장부') as department_code,
-                    pw.product_name,
-                    pw.reg_date,
-                    pw.upd_date,
-                    NULL as result_detail_id,
-                    
-                    COALESCE(pw.product_name, pw.step_name, '제품명없음') as final_product_name,
-                    
-                    CASE 
-                        WHEN pw.step_name LIKE '%외포장%' OR pw.step_name LIKE '%2차%' THEN 'OUTER'
-                        ELSE 'INNER'
-                    END as package_type,
-                    
-                    COALESCE(pw.work_line, pw.line_id, '라인정보없음') as line_name,
-                    
-                    CASE 
-                        WHEN pw.input_qty > 0 THEN ROUND((pw.output_qty / pw.input_qty * 100), 1)
-                        ELSE 0
-                    END AS progress_rate,
-                    
-                    COALESCE(pw.input_qty, 1000) as order_qty,
-                    COALESCE(pw.input_qty, 1000) as target_qty,
-                    COALESCE(emp.employee_name, pw.employee_name, '작업자') as emp_name,
-                    0 as defect_qty,
-                    
-                    pw.work_id as work_no
-                    
-                FROM package_work pw
-                LEFT JOIN tablets.employees emp ON pw.employee_id = emp.employee_id
-                WHERE pw.work_id IS NOT NULL
-            `;
-            
-            const params = [];
-            
-            // 포장타입 필터
-            if (packageType) {
-                if (packageType === 'INNER') {
-                    query += ` AND (pw.step_name NOT LIKE '%외포장%' AND pw.step_name NOT LIKE '%2차%')`;
-                } else if (packageType === 'OUTER') {
-                    query += ` AND (pw.step_name LIKE '%외포장%' OR pw.step_name LIKE '%2차%')`;
-                }
-            }
-            
-            // 라인 필터
-            if (lineId && lineId !== 'ALL') {
-                query += ` AND (pw.line_id LIKE ? OR pw.work_line LIKE ?)`;
-                params.push(`%${lineId}%`, `%${lineId}%`);
-            }
-            
-            if (lineName && lineName !== 'ALL') {
-                query += ` AND (pw.line_id LIKE ? OR pw.work_line LIKE ? OR pw.step_name LIKE ?)`;
-                params.push(`%${lineName}%`, `%${lineName}%`, `%${lineName}%`);
-            }
-            
-            query += ` ORDER BY pw.reg_date DESC LIMIT 50`;
-            
-            const result = await this.executeRawQuery(query, params);
-            console.log(`package_work 작업 목록 조회 완료 (실제 제품명 적용): ${result.length}건`);
-            
-            return this.convertBigIntToNumber(result);
-            
-        } catch (error) {
-            console.error('package_work 작업 목록 조회 실패 (실제 제품명 적용):', error);
-            throw new Error(`package_work DB 연결 실패: ${error.message}`);
-        }
-    }
-
-    // 기타 필요한 함수들 (실제 제품명 적용)
-    async getWorkDetail(workId) {
-        try {
-            const result = await this.executeRawQuery(`
-                SELECT 
-                    pw.*,
-                    COALESCE(emp.employee_name, pw.employee_name, '작업자') as employee_name,
-                    COALESCE(emp.position, '작업자') as position,
-                    COALESCE(emp.department_code, '포장부') as department_code,
-                    emp.employment_status,
-                    NULL as result_detail_id,
-                    COALESCE(pw.product_name, pw.step_name, '제품명없음') as final_product_name,
-                    COALESCE(emp.employee_name, pw.employee_name, '작업자') as emp_name,
-                    COALESCE(pw.input_qty, 1000) as order_qty,
-                    COALESCE(pw.work_line, pw.line_id, '라인정보없음') as line_name,
-                    pw.work_id as work_no
-                FROM package_work pw
-                LEFT JOIN tablets.employees emp ON pw.employee_id = emp.employee_id
-                WHERE pw.work_id = ?
-            `, [workId]);
-            
-            return result.length > 0 ? this.convertBigIntToNumber(result[0]) : null;
-        } catch (error) {
-            console.error(`작업 상세 조회 실패 (실제 제품명 적용) (${workId}):`, error);
-            return null;
-        }
-    }
-
-    async getProductCodes() {
-        try {
-            const query = `
-                SELECT DISTINCT 
-                    pw.product_name,
-                    pw.product_name as product_code,
-                    COUNT(*) as work_count
-                FROM package_work pw
-                LEFT JOIN tablets.employees emp ON pw.employee_id = emp.employee_id
-                WHERE pw.product_name IS NOT NULL 
-                AND pw.product_name != ''
-                GROUP BY pw.product_name
-                ORDER BY work_count DESC
-            `;
-            
-            const result = await this.executeRawQuery(query);
-            console.log(`제품코드 조회 완료 (실제 제품명 적용): ${result.length}개`);
-            return this.convertBigIntToNumber(result);
-            
-        } catch (error) {
-            console.error('제품코드 조회 실패 (실제 제품명 적용):', error);
-            throw error;
-        }
-    }
-
-    async getWorksByLine(lineId) {
-        try {
-            const query = `
-                SELECT 
-                    pw.work_id,
-                    pw.work_order_no,
-                    pw.step_name,
-                    pw.step_status,
-                    pw.input_qty,
-                    pw.output_qty,
-                    COALESCE(emp.employee_name, pw.employee_name, '작업자') as employee_name,
-                    COALESCE(emp.position, '작업자') as position,
-                    COALESCE(emp.department_code, '포장부') as department_code,
-                    pw.product_name,
-                    pw.line_id,
-                    pw.work_line,
-                    NULL as result_detail_id,
-                    
-                    COALESCE(pw.product_name, pw.step_name, '제품명없음') as final_product_name,
-                    COALESCE(pw.work_line, pw.line_id, '라인정보없음') as line_name,
-                    
-                    CASE 
-                        WHEN pw.input_qty > 0 THEN ROUND((pw.output_qty / pw.input_qty * 100), 1)
-                        ELSE 0
-                    END AS progress_rate,
-                    
-                    pw.work_id as work_no
-                    
-                FROM package_work pw
-                LEFT JOIN tablets.employees emp ON pw.employee_id = emp.employee_id
-                WHERE (pw.line_id LIKE ? OR pw.work_line LIKE ?)
-                ORDER BY pw.reg_date DESC
-            `;
-            
-            const result = await this.executeRawQuery(query, [`%${lineId}%`, `%${lineId}%`]);
-            return this.convertBigIntToNumber(result);
-            
-        } catch (error) {
-            console.error('라인별 작업 조회 실패 (실제 제품명 적용):', error);
-            throw error;
-        }
-    }
-
-    // 테스트용 함수들
-    async debugTableStructure() {
-        try {
-            console.log('=== 테이블 구조 확인 (실제 제품명 적용) ===');
-            
-            const tables = ['package_work', 'work_order_master', 'work_result', 'work_result_detail', 'process', 'process_group', 'employees'];
-            const tableInfo = {};
-            
-            for (const tableName of tables) {
-                try {
-                    const countQuery = `SELECT COUNT(*) as total_rows FROM ${tableName}`;
-                    const countResult = await this.executeRawQuery(countQuery);
-                    
-                    tableInfo[tableName] = {
-                        exists: true,
-                        total_rows: countResult[0].total_rows
-                    };
-                } catch (error) {
-                    tableInfo[tableName] = {
-                        exists: false,
-                        error: error.message
-                    };
-                }
-            }
-            
-            // employees 테이블 활성 사용자 수 확인
-            try {
-                const activeEmployees = await this.executeRawQuery(`
-                    SELECT COUNT(*) as active_count 
-                    FROM employees 
-                    WHERE employment_status = 'Y'
-                `);
-                tableInfo.employees.active_employees = activeEmployees[0].active_count;
-                
-                // 전체 employees 수도 확인
-                const allEmployees = await this.executeRawQuery(`
-                    SELECT COUNT(*) as total_employees 
-                    FROM employees
-                `);
-                tableInfo.employees.total_employees = allEmployees[0].total_employees;
-            } catch (error) {
-                tableInfo.employees.active_employees = 0;
-                tableInfo.employees.total_employees = 0;
-            }
-            
-            return {
-                success: true,
-                data: tableInfo
-            };
-            
-        } catch (error) {
-            console.error('테이블 구조 확인 실패 (실제 제품명 적용):', error);
-            return {
-                success: false,
-                error: error.message,
-                data: null
-            };
-        }
-    }
-
-    async simpleDataCheck() {
-        try {
-            const checks = {};
-            
-            const tables = ['package_work', 'work_order_master', 'work_result', 'work_result_detail', 'process', 'process_group', 'employees'];
-            
-            for (const table of tables) {
-                try {
-                    const result = await this.executeRawQuery(`SELECT COUNT(*) as total FROM ${table}`);
-                    checks[`${table}_rows`] = result[0].total;
-                } catch (error) {
-                    checks[`${table}_rows`] = 0;
-                }
-            }
-            
-            // employees 테이블 활성 사용자 수
-            try {
-                const activeResult = await this.executeRawQuery(`
-                    SELECT COUNT(*) as total FROM employees WHERE employment_status = 'Y'
-                `);
-                checks.active_employees = activeResult[0].total;
-                
-                // 전체 employees 수
-                const allResult = await this.executeRawQuery(`
-                    SELECT COUNT(*) as total FROM employees
-                `);
-                checks.total_employees = allResult[0].total;
-            } catch (error) {
-                checks.active_employees = 0;
-                checks.total_employees = 0;
-            }
-            
-            return {
-                success: true,
-                data: {
-                    ...checks,
-                    has_data: Object.values(checks).some(count => count > 0)
-                }
-            };
-        } catch (error) {
-            return {
-                success: false,
-                error: error.message
-            };
-        }
-    }
 }
 
-// 싱글톤 인스턴스 생성
+// 싱글톤 인스턴스
 const packageService = new PackageService();
 
-// 모듈 익스포트 (실제 제품명 매핑 함수 추가)
+// 모듈 익스포트
 module.exports = {
-    // 라인별 단일 작업번호 조회 (실제 제품명 적용)
+    // 작업번호 조회 (Process7 포장공정 전체 구조)
     getInnerWorkByLine: function(...args) { return packageService.getInnerWorkByLine(...args); },
     getOuterWorkByLine: function(...args) { return packageService.getOuterWorkByLine(...args); },
     
-    // 워크플로우 함수들
-    startInnerPackagingWorkflow: function(...args) { return packageService.startInnerPackagingWorkflow(...args); },
-    completeInnerPackagingWorkflow: function(...args) { return packageService.completeInnerPackagingWorkflow(...args); },
-    startOuterPackagingWorkflow: function(...args) { return packageService.startOuterPackagingWorkflow(...args); },
-    completeOuterPackagingWorkflow: function(...args) { return packageService.completeOuterPackagingWorkflow(...args); },
+    // 작업 시작/완료 (Process7에서 code_value 기반 상태 변경)
+    startInnerPackaging: function(...args) { return packageService.startInnerPackaging(...args); },
+    completeInnerPackaging: function(...args) { return packageService.completeInnerPackaging(...args); },
+    startOuterPackaging: function(...args) { return packageService.startOuterPackaging(...args); },
+    completeOuterPackaging: function(...args) { return packageService.completeOuterPackaging(...args); },
     
-    // 기존 package_work 테이블 함수들 (실제 제품명 적용)
-    getWorkList: function(...args) { return packageService.getWorkList(...args); },
-    getWorkDetail: function(...args) { return packageService.getWorkDetail(...args); },
-    getProductCodes: function(...args) { return packageService.getProductCodes(...args); },
-    getWorksByLine: function(...args) { return packageService.getWorksByLine(...args); },
+    // Process7 포장 작업 설정
+    setupInnerPackagingWork: function(...args) { return packageService.setupInnerPackagingWork(...args); },
+    getInnerWorkByProjectKnowledge: function(...args) { return packageService.getInnerWorkByProjectKnowledge(...args); },
     
-    // 제품명 매핑 함수 추가
-    getProductNameFromCode: function(...args) { return packageService.getProductNameFromCode(...args); },
-    extractProductCodeFromLine: function(...args) { return packageService.extractProductCodeFromLine(...args); },
+    // 디버깅 및 구조 확인
+    checkDatabaseStructure: function(...args) { return packageService.checkDatabaseStructure(...args); },
+    getSimpleInnerWorkNumbers: function(...args) { return packageService.getSimpleInnerWorkNumbers(...args); },
     
-    // 유틸리티 함수들
-    debugTableStructure: function(...args) { return packageService.debugTableStructure(...args); },
-    executeRawQuery: function(...args) { return packageService.executeRawQuery(...args); },
+    // 유틸리티
+    getWorkStatus: function(...args) { return packageService.getWorkStatus(...args); },
     testConnection: function(...args) { return packageService.testConnection(...args); },
-    simpleDataCheck: function(...args) { return packageService.simpleDataCheck(...args); },
-    convertBigIntToNumber: function(...args) { return packageService.convertBigIntToNumber(...args); }
+    executeQuery: function(...args) { return packageService.executeQuery(...args); },
+    convertBigIntToNumber: function(...args) { return packageService.convertBigIntToNumber(...args); },
+    
+    // 제품명/코드 변환
+    getProductNameFromCode: function(...args) { return packageService.getProductNameFromCode(...args); },
+    extractProductCodeFromLine: function(...args) { return packageService.extractProductCodeFromLine(...args); }
 };
