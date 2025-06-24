@@ -1,7 +1,9 @@
 <template>
   <VaCard>
     <VaCardTitle class="pb-0!">
-      <h1 class="card-title text-secondary font-bold uppercase">Yearly Breakup</h1>
+      <h1 class="card-title text-secondary font-bold uppercase">
+        Yearly Breakup
+      </h1>
     </VaCardTitle>
     <VaCardContent class="flex flex-row gap-1">
       <section class="w-1/2">
@@ -13,11 +15,17 @@
         </p>
         <div class="my-4 gap-2 flex flex-col">
           <div class="flex items-center">
-            <span class="inline-block w-2 h-2 mr-2" :style="{ backgroundColor: earningsBackground }"></span>
+            <span
+              class="inline-block w-2 h-2 mr-2"
+              :style="{ backgroundColor: earningsBackground }"
+            ></span>
             <span class="text-secondary">Earnings</span>
           </div>
           <div class="flex items-center">
-            <span class="inline-block w-2 h-2 mr-2" :style="{ backgroundColor: profitBackground }"></span>
+            <span
+              class="inline-block w-2 h-2 mr-2"
+              :style="{ backgroundColor: profitBackground }"
+            ></span>
             <span class="text-secondary">Profit</span>
           </div>
         </div>
@@ -36,27 +44,37 @@
 </template>
 
 <script setup lang="ts">
-import { VaCard } from 'vuestic-ui'
-import VaChart from '../../../../components/va-charts/VaChart.vue'
-import { useChartData } from '../../../../data/charts/composables/useChartData'
-import { doughnutChartData, profitBackground, earningsBackground } from '../../../../data/charts/doughnutChartData'
-import { doughnutConfig } from '../../../../components/va-charts/vaChartConfigs'
-import { ChartOptions } from 'chart.js'
-import { externalTooltipHandler } from '../../../../components/va-charts/external-tooltip'
+import { VaCard } from "vuestic-ui";
+import VaChart from "../../../../components/va-charts/VaChart.vue";
+import { useChartData } from "../../../../data/charts/composables/useChartData";
+import {
+  doughnutChartData,
+  profitBackground,
+  earningsBackground,
+} from "../../../../data/charts/doughnutChartData";
+import { doughnutConfig } from "../../../../components/va-charts/vaChartConfigs";
+import { ChartOptions } from "chart.js";
+import { externalTooltipHandler } from "../../../../components/va-charts/external-tooltip";
 
-const chartData = useChartData(doughnutChartData)
+const chartData = useChartData(doughnutChartData);
 
-const options: ChartOptions<'doughnut'> = {
+const options: ChartOptions<"doughnut"> = {
   ...doughnutConfig,
   plugins: {
     ...doughnutConfig.plugins,
     tooltip: {
       // Chart to small to show tooltips
       enabled: false,
-      position: 'nearest',
+      position: "nearest",
       external: externalTooltipHandler,
     },
   },
-  circumference: 360 * (chartData.value.datasets[0].data.reduce((acc: number, d: number) => acc + d, 0) / 800),
-}
+  circumference:
+    360 *
+    (chartData.value.datasets[0].data.reduce(
+      (acc: number, d: number) => acc + d,
+      0,
+    ) /
+      800),
+};
 </script>

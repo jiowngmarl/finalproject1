@@ -7,11 +7,15 @@
       <va-button @click="searchProducts">검색</va-button>
     </div>
 
-    <va-data-table :items="productList" :columns="columns" track-by="product_code">
+    <va-data-table
+      :items="productList"
+      :columns="columns"
+      track-by="product_code"
+    >
       <template #cell(select)="{ row }">
         <va-checkbox
           :model-value="row.rowData.selected"
-          @update:modelValue="val => handleSelect(row.rowData, val)"
+          @update:modelValue="(val) => handleSelect(row.rowData, val)"
         />
       </template>
     </va-data-table>
@@ -23,61 +27,63 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, defineProps, defineEmits } from 'vue'
-import axios from 'axios'
+import { ref, computed, defineProps, defineEmits } from "vue";
+import axios from "axios";
 
-const props = defineProps<{ visible: boolean }>()
-const emit = defineEmits(['update:visible', 'apply'])
+const props = defineProps<{ visible: boolean }>();
+const emit = defineEmits(["update:visible", "apply"]);
 
 const visible = computed({
   get: () => props.visible,
-  set: (val) => emit('update:visible', val)
-})
+  set: (val) => emit("update:visible", val),
+});
 
 const search = ref({
-  product_name: '',
-  product_stand: '',
-  result_id: ''
-})
+  product_name: "",
+  product_stand: "",
+  result_id: "",
+});
 
-const productList = ref<any[]>([])
+const productList = ref<any[]>([]);
 
 const columns = [
-  { key: 'select', label: '선택', width: 60 },
-  { key: 'work_order_no', label: '작업지시 코드' },
-  { key: 'product_name', label: '제품명' },
-  { key: 'product_stand', label: '제품규격' },
-  { key: 'result_id', label: '실적 ID' }
-]
+  { key: "select", label: "선택", width: 60 },
+  { key: "work_order_no", label: "작업지시 코드" },
+  { key: "product_name", label: "제품명" },
+  { key: "product_stand", label: "제품규격" },
+  { key: "result_id", label: "실적 ID" },
+];
 
 const searchProducts = async () => {
   try {
-    const res = await axios.get('/prodResult')
+    const res = await axios.get("/prodResult");
     productList.value = res.data
       .filter((item: any) => {
         return (
-          (!search.value.product_name || item.product_name.includes(search.value.product_name)) &&
-          (!search.value.product_stand || item.product_stand.includes(search.value.product_stand))
-        )
+          (!search.value.product_name ||
+            item.product_name.includes(search.value.product_name)) &&
+          (!search.value.product_stand ||
+            item.product_stand.includes(search.value.product_stand))
+        );
       })
-      .map((item: any) => ({ ...item, selected: false }))
+      .map((item: any) => ({ ...item, selected: false }));
   } catch (err) {
-    alert('제품 목록 조회 실패')
+    alert("제품 목록 조회 실패");
   }
-}
+};
 
 const handleSelect = (target: any, val: boolean) => {
-  productList.value.forEach(item => item.selected = false)
-  if (val) target.selected = true
-}
+  productList.value.forEach((item) => (item.selected = false));
+  if (val) target.selected = true;
+};
 
 const applySelection = () => {
-  const selected = productList.value.find(p => p.selected)
+  const selected = productList.value.find((p) => p.selected);
   if (selected) {
-    emit('apply', selected)
-    visible.value = false
+    emit("apply", selected);
+    visible.value = false;
   } else {
-    alert('선택된 제품이 없습니다.')
+    alert("선택된 제품이 없습니다.");
   }
-}
+};
 </script>

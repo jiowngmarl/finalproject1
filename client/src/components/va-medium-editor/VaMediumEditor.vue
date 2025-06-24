@@ -5,56 +5,56 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, Ref, onMounted, onBeforeUnmount } from 'vue'
-import MediumEditor from 'medium-editor'
+import { ref, Ref, onMounted, onBeforeUnmount } from "vue";
+import MediumEditor from "medium-editor";
 
 const props = withDefaults(
   defineProps<{
     editorOptions?: {
-      buttonLabels: string
-      autoLink: boolean
+      buttonLabels: string;
+      autoLink: boolean;
       toolbar: {
-        buttons: string[]
-      }
-    }
+        buttons: string[];
+      };
+    };
   }>(),
   {
     editorOptions: () => ({
-      buttonLabels: 'fontawesome',
+      buttonLabels: "fontawesome",
       autoLink: true,
       toolbar: {
-        buttons: ['bold', 'italic', 'underline', 'anchor', 'h1', 'h2', 'h3'],
+        buttons: ["bold", "italic", "underline", "anchor", "h1", "h2", "h3"],
       },
     }),
   },
-)
+);
 
 const emit = defineEmits<{
-  (e: 'initialized', editor: typeof MediumEditor): void
-}>()
+  (e: "initialized", editor: typeof MediumEditor): void;
+}>();
 
-const editorElement: Ref<null | HTMLElement> = ref(null)
-let editor: typeof MediumEditor | null = null
+const editorElement: Ref<null | HTMLElement> = ref(null);
+let editor: typeof MediumEditor | null = null;
 
 onMounted(() => {
   if (!editorElement.value) {
-    return
+    return;
   }
 
-  editor = new MediumEditor(editorElement.value, props.editorOptions)
-  emit('initialized', editor)
-})
+  editor = new MediumEditor(editorElement.value, props.editorOptions);
+  emit("initialized", editor);
+});
 
 onBeforeUnmount(() => {
   if (editor) {
-    editor.destroy()
+    editor.destroy();
   }
-})
+});
 </script>
 
 <style lang="scss">
-@import 'medium-editor/src/sass/medium-editor';
-@import 'variables';
+@import "medium-editor/src/sass/medium-editor";
+@import "variables";
 
 $medium-editor-shadow: var(--va-box-shadow);
 $medium-editor-background-color: var(--va-background-primary);
@@ -163,7 +163,8 @@ $medium-editor-active-text-color: var(--va-white);
 }
 
 .medium-toolbar-arrow-under::after {
-  border-color: $medium-editor-background-color transparent transparent transparent;
+  border-color: $medium-editor-background-color transparent transparent
+    transparent;
   top: 100%;
 }
 

@@ -1,5 +1,9 @@
 <template>
-  <va-modal :model-value="modelValue" @update:modelValue="$emit('update:modelValue', $event)" size="large">
+  <va-modal
+    :model-value="modelValue"
+    @update:modelValue="$emit('update:modelValue', $event)"
+    size="large"
+  >
     <template #title>설비 검색</template>
 
     <!-- 검색 입력 -->
@@ -8,48 +12,56 @@
     </div>
 
     <!-- 설비 테이블 -->
-    <va-data-table :items="filteredEquipments" :columns="columns" track-by="eq_id">
+    <va-data-table
+      :items="filteredEquipments"
+      :columns="columns"
+      track-by="eq_id"
+    >
       <template #cell(action)="{ row }">
-        <va-button size="small" @click="selectEquipment(row.rowData)">선택</va-button>
+        <va-button size="small" @click="selectEquipment(row.rowData)"
+          >선택</va-button
+        >
       </template>
     </va-data-table>
   </va-modal>
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, ref, computed } from 'vue'
+import { defineProps, defineEmits, ref, computed } from "vue";
 
 // Props
 const props = defineProps<{
-  modelValue: boolean
-  equipmentList: Array<any>
-}>()
+  modelValue: boolean;
+  equipmentList: Array<any>;
+}>();
 
-const emit = defineEmits(['update:modelValue', 'apply'])
+const emit = defineEmits(["update:modelValue", "apply"]);
 
 // 검색어 상태
-const searchText = ref('')
+const searchText = ref("");
 
 // 테이블 필터링
 const filteredEquipments = computed(() => {
-  const keyword = searchText.value.trim().toLowerCase()
-  if (!keyword) return props.equipmentList
-  return props.equipmentList.filter(e =>
-    e.eq_name?.toLowerCase().includes(keyword) || e.eq_id?.toLowerCase().includes(keyword)
-  )
-})
+  const keyword = searchText.value.trim().toLowerCase();
+  if (!keyword) return props.equipmentList;
+  return props.equipmentList.filter(
+    (e) =>
+      e.eq_name?.toLowerCase().includes(keyword) ||
+      e.eq_id?.toLowerCase().includes(keyword),
+  );
+});
 
 // 테이블 컬럼
 const columns = [
-  { key: 'eq_id', label: '설비 ID' },
-  { key: 'eq_name', label: '설비명' },
-  { key: 'code_label', label: '상태' },
-  { key: 'action', label: '선택', width: 100 }
-]
+  { key: "eq_id", label: "설비 ID" },
+  { key: "eq_name", label: "설비명" },
+  { key: "code_label", label: "상태" },
+  { key: "action", label: "선택", width: 100 },
+];
 
 // 선택시 emit
 const selectEquipment = (item: any) => {
-  emit('apply', item)
-  emit('update:modelValue', false) // 팝업 닫기
-}
+  emit("apply", item);
+  emit("update:modelValue", false); // 팝업 닫기
+};
 </script>

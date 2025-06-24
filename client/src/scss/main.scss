@@ -1,6 +1,6 @@
-@import 'tailwind';
-@import 'vuestic';
-@import 'icon-fonts/index';
+@import "tailwind";
+@import "vuestic";
+@import "icon-fonts/index";
 
 body {
   @apply text-regularMedium;
@@ -9,7 +9,7 @@ body {
   --va-checkbox-font-size: 0.875rem;
   --va-card-box-shadow: none; // TODO Remove after https://github.com/epicmaxco/vuestic-ui/issues/3964
   --va-card-padding: 1rem;
-  --va-font-family: 'Inter', sans-serif;
+  --va-font-family: "Inter", sans-serif;
 }
 
 code,

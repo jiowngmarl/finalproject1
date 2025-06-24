@@ -1,6 +1,6 @@
-import iconsConfig from './icons-config/icons-config'
-import colors from './themes'
-import { defineVuesticConfig } from 'vuestic-ui'
+import iconsConfig from "./icons-config/icons-config";
+import colors from "./themes";
+import { defineVuesticConfig } from "vuestic-ui";
 
 export default defineVuesticConfig({
   devtools: false,
@@ -30,11 +30,11 @@ export default defineVuesticConfig({
     },
     VaModal: {
       mobileFullscreen: false,
-      maxHeight: 'calc(100% - 2rem)',
+      maxHeight: "calc(100% - 2rem)",
     },
     VaPagination: {
       activeButtonProps: {
-        preset: 'primary',
+        preset: "primary",
       },
     },
     VaDataTable: {
@@ -43,14 +43,14 @@ export default defineVuesticConfig({
     presets: {
       VaSelect: {
         small: {
-          class: 'va-select--small',
+          class: "va-select--small",
           keepAnchorWidth: false,
-          placement: 'bottom-end',
-          width: 'min(100%, 150px)',
+          placement: "bottom-end",
+          width: "min(100%, 150px)",
           style:
-            '--va-input-wrapper-min-height: 24px; --va-input-wrapper-border-radius: 2px; --va-input-wrapper-width: 100px;',
+            "--va-input-wrapper-min-height: 24px; --va-input-wrapper-border-radius: 2px; --va-input-wrapper-width: 100px;",
         },
       },
     },
   },
-})
+});

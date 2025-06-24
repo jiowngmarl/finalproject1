@@ -19,40 +19,40 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue'
-import axios from 'axios'
+import { ref, computed, onMounted } from "vue";
+import axios from "axios";
 
 interface MaterialInspectionItem {
-  material_name: string
+  material_name: string;
 }
 
 // 자재 리스트
-const MaterialInspectionList = ref<MaterialInspectionItem[]>([])
+const MaterialInspectionList = ref<MaterialInspectionItem[]>([]);
 
 // 사용자 입력 폼
 const form = ref({
-  materialName: ''
-})
+  materialName: "",
+});
 
 // 드롭다운 옵션 구성
 const materialOptions = computed(() =>
-  MaterialInspectionList.value.map(item => item.material_name)
-)
+  MaterialInspectionList.value.map((item) => item.material_name),
+);
 
 // 자재 리스트 가져오기
 const fetchMaterialList = async () => {
   try {
-    const res = await axios.get('/materialInspections/materialList')
-    MaterialInspectionList.value = res.data // 받아온 리스트 저장
+    const res = await axios.get("/materialInspections/materialList");
+    MaterialInspectionList.value = res.data; // 받아온 리스트 저장
   } catch (err) {
-    console.error('❌ 자재명 리스트 조회 실패:', err)
+    console.error("❌ 자재명 리스트 조회 실패:", err);
   }
-}
+};
 
 // 마운트 시 자재 리스트 불러오기
 onMounted(() => {
-  fetchMaterialList()
-})
+  fetchMaterialList();
+});
 </script>
 <style scoped>
 /* 전체 레이아웃 */
