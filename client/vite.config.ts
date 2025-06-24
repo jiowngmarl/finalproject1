@@ -73,7 +73,7 @@ const createProxy = (paths: string[]) =>
 export default defineConfig({
   build: {
     sourcemap: true,
-    outDir: "../server/public",
+    //outDir: "../server/public",
   },
   server: {
     proxy: createProxy(proxyPaths),
@@ -90,10 +90,8 @@ export default defineConfig({
     }),
     vue(),
     VueI18nPlugin({
-      include: resolve(
-        dirname(fileURLToPath(import.meta.url)),
-        "./src/i18n/locales/**",
-      ),
-    }),
-  ],
-});
+      include: resolve(dirname(fileURLToPath(import.meta.url)), './src/i18n/locales/**')
+    })
+  ]
+})
+  

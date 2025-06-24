@@ -84,17 +84,16 @@ import axios from "axios";
 import { ref, computed, onMounted } from "vue";
 
 interface Product {
-  product_code: string;
-  product_name: string;
-  product_pay: string;
-  product_atc: string;
-  product_gred: string;
-  product_stand: string;
-  product_perdt: string;
-  product_unit: string;
-  product_safty: string;
-  product_img: string;
-  product_packge: string;
+  product_code: string
+  product_name: string
+  product_pay: string
+  product_atc: string
+  product_gred: string
+  product_stand: string
+  product_perdt: string
+  product_unit: string
+  product_safty: string
+  product_img: string
 }
 
 const products = ref<Product[]>([]);
@@ -137,35 +136,25 @@ const filteredProducts = computed(() => {
 });
 
 const form = ref({
-  product_code: "",
-  product_name: "",
-  product_pay: "",
-  product_atc: "",
-  product_gred: "",
-  product_stand: "",
-  product_perdt: "",
-  product_unit: "",
-  product_safty: "",
-  product_img: "", // 이미지 이름 저장
-  product_packge: "",
-});
+  product_code: '',
+  product_name: '',
+  product_pay: '',
+  product_atc: '',
+  product_gred: '',
+  product_stand: '',
+  product_perdt: '',
+  product_unit: '',
+  product_safty: '',
+  product_img: '', // 이미지 이름 저장
+})
 
 const previewImage = ref<string | null>(null);
 const imageFile = ref<File | null>(null);
 
 function resetForm() {
   form.value = {
-    product_code: "",
-    product_name: "",
-    product_pay: "",
-    product_atc: "",
-    product_gred: "",
-    product_stand: "",
-    product_perdt: "",
-    product_unit: "",
-    product_safty: "",
-    product_img: "",
-    product_packge: "",
+    product_code: '', product_name: '', product_pay: '', product_atc: '', product_gred: '', product_stand: '',
+    product_perdt: '', product_unit: '', product_safty: '', product_img: ''
   };
   previewImage.value = null;
   imageFile.value = null;

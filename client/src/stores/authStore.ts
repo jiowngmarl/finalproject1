@@ -738,4 +738,4 @@ export const useAuthStore = defineStore("auth", () => {
   };
 });
 
-export default useAuthStore;
+export default useAuthStore

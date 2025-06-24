@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-  >
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white rounded-lg w-[800px] h-[500px] flex flex-col">
       <!-- 헤더 -->
       <div class="flex justify-between items-center p-4 border-b">
@@ -50,7 +48,7 @@
               <td class="border p-2 text-center">
                 <button
                   @click="$emit('select', order)"
-                  class="px-2 py-1 bg-blue-500 text-white text-xs rounded"
+                  class="px-4 py-2 bg-blue-500 text-white text-xs rounded"
                 >
                   선택
                 </button>

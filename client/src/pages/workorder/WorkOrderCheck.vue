@@ -173,10 +173,7 @@
                 {{ formatDate(workOrder.write_date) }}
               </td>
               <td class="border border-gray-200 px-3 py-2">
-                {{ workOrder.writer_name }}
-              </td>
-              <td class="border border-gray-200 px-3 py-2 text-center">
-                {{ formatDate(workOrder.order_start_dt) }}
+                <span class="text-blue-700 font-medium">{{ workOrder.product_summary }}</span>
               </td>
               <td class="border border-gray-200 px-3 py-2 text-center">
                 {{ formatDate(workOrder.order_end_dt) }}

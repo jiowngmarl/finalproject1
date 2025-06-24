@@ -12,7 +12,7 @@ const searchProducts = async (searchTerm = '') => {
     });
 };
 
-// 작업지시서 검색 (모달용)
+// 작업지시서 검색 (모달용) - 올바름
 const searchWorkOrders = async (searchTerm = '') => {
   return await mariadb.query('searchWorkOrders', [searchTerm, searchTerm, searchTerm])
     .catch(err => {
@@ -20,9 +20,9 @@ const searchWorkOrders = async (searchTerm = '') => {
     });
 };
 
-// 계획 검색 (모달용) - 파라미터 수정
+// 계획 검색 (모달용) - 파라미터 수정 필요
 const searchPlans = async (searchTerm = '') => {
-  return await mariadb.query('searchPlans', [searchTerm, searchTerm])
+  return await mariadb.query('searchPlans', [searchTerm, searchTerm, searchTerm])  // 3개로 수정
     .catch(err => {
       throw err;
     });

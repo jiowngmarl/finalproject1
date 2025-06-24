@@ -124,7 +124,7 @@
                   <td class="border border-gray-200 px-3 py-2 text-center">
                     <button
                       @click.stop="selectWorkOrder(workOrder)"
-                      class="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
+                      class="px-4 py-2 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
                     >
                       선택
                     </button>

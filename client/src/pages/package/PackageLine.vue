@@ -272,9 +272,7 @@
         >
           <div class="line-header">
             <h3 class="line-name">{{ line.line_name }}</h3>
-            <div v-if="isRecommendedLine(line)" class="recommended-badge">
-              추천
-            </div>
+            <div v-if="isRecommendedLine(line)" class="recommended-badge"></div>
           </div>
 
           <div class="line-status">
@@ -579,39 +577,39 @@ onBeforeMount(() => {
 
 // 컴포넌트 마운트 시 라인 목록 로드
 onMounted(() => {
-  console.log("컴포넌트 마운트 - 라인 목록 로드 시작");
-  fetchLines();
-});
+  console.log('컴포넌트 마운트 - 라인 목록 로드 시작')
+  fetchLines()
+})
 
 // ====== API 함수들 ======
 
-// 현재 로그인한 사용자 정보 로드 (에러 방지 버전)
+// 현재 로그인한 사용자 정보 로드 (개선된 버전)
 async function loadCurrentEmployee() {
   try {
-    console.log("현재 사용자 정보 로드 시작...");
-    const response = await axios.get("/lines/current-employee");
-
+    console.log('현재 사용자 정보 로드 시작...')
+    const response = await axios.get('/lines/current-employee')
+    
     if (response.data && response.data.success) {
-      currentEmployee.value = response.data.data;
-      console.log("현재 사용자 정보 로드 성공:", currentEmployee.value);
+      currentEmployee.value = response.data.data
+      console.log('현재 사용자 정보 로드 성공:', currentEmployee.value)
     } else {
-      throw new Error(response.data?.message || "API 응답 오류");
+      throw new Error(response.data?.message || 'API 응답 오류')
     }
   } catch (error) {
-    console.error("현재 사용자 정보 로드 실패:", error);
-
+    console.error('현재 사용자 정보 로드 실패:', error)
+    
     //  기본 사용자 정보로 대체 (에러 방지)
-    currentEmployee.value = {
-      employee_name: "김홍인",
-      employee_id: 2,
-    };
-
+    currentEmployee.value = { 
+      employee_name: '김홍인', 
+      employee_id: 2 
+    }
+    
     if (error.response?.status === 401) {
-      console.warn("로그인이 필요합니다. 기본 사용자로 진행합니다.");
-    } else if (error.code === "ERR_NETWORK") {
-      console.warn("API 서버에 연결할 수 없습니다. 기본값을 사용합니다.");
+      console.warn('로그인이 필요합니다. 기본 사용자로 진행합니다.')
+    } else if (error.code === 'ERR_NETWORK') {
+      console.warn('API 서버에 연결할 수 없습니다. 기본값을 사용합니다.')
     } else {
-      console.warn("사용자 정보를 불러올 수 없어 기본값을 사용합니다.");
+      console.warn('사용자 정보를 불러올 수 없어 기본값을 사용합니다.')
     }
   }
 }
@@ -718,11 +716,9 @@ function isRecommendedLine(line) {
     completedSteps.value.includes("INNER")
   ) {
     // 외포장 시 특정 조건의 라인을 추천
-    return (
-      line.line_state === "s2" &&
-      line.line_type === "OUTER" &&
-      (line.line_name.includes("A") || line.line_name.includes("1"))
-    );
+    return line.line_state === 's2' && 
+           line.line_type === 'OUTER' && 
+           (line.line_name.includes('A') || line.line_name.includes('1'))
   }
   return false;
 }
@@ -753,35 +749,31 @@ async function confirmStartWork() {
   }
 }
 
-//  작업 수행 페이지로 이동 (워크플로우 상태 전달)
+// navigateToWorkPage 수정 - 사용자 정보 확실히 전달
 function navigateToWorkPage(line) {
-  console.log("작업 페이지로 이동:", line);
-
+  console.log('작업 페이지로 이동:', line)
+  
   const queryParams = {
     line_id: line.line_id,
     line_name: line.line_name,
     line_type: line.line_type,
-    work_no: line.curr_work_no || "",
-    return_to: "package_line",
+    work_no: line.curr_work_no || '',
+    return_to: 'package_line',
     current_package_type: selectedPackageType.value,
-    employee_id: currentEmployee.value?.employee_id || "",
-    employee_name: currentEmployee.value?.employee_name || "",
-  };
-
+    employee_id: currentEmployee.value?.employee_id || '',
+    employee_name: currentEmployee.value?.employee_name || ''
+  }
+  
   //  워크플로우 상태 정보 추가
-  if (
-    selectedPackageType.value === "OUTER" &&
-    completedSteps.value.includes("INNER")
-  ) {
-    queryParams.workflow_step = "OUTER";
-    queryParams.inner_completed = "true";
-    queryParams.inner_work_no = innerWorkNo.value;
-    queryParams.inner_completion_time =
-      innerCompletionTime.value?.toISOString();
-    queryParams.auto_start_guide = "true"; // 외포장 자동 안내 활성화
-  } else if (selectedPackageType.value === "INNER") {
-    queryParams.workflow_step = "INNER";
-    queryParams.next_step = "OUTER";
+  if (selectedPackageType.value === 'OUTER' && completedSteps.value.includes('INNER')) {
+    queryParams.workflow_step = 'OUTER'
+    queryParams.inner_completed = 'true'
+    queryParams.inner_work_no = innerWorkNo.value
+    queryParams.inner_completion_time = innerCompletionTime.value?.toISOString()
+    queryParams.auto_start_guide = 'true' // 외포장 자동 안내 활성화
+  } else if (selectedPackageType.value === 'INNER') {
+    queryParams.workflow_step = 'INNER'
+    queryParams.next_step = 'OUTER'
   }
 
   try {
@@ -791,10 +783,10 @@ function navigateToWorkPage(line) {
     });
     console.log("작업 페이지로 이동 성공");
   } catch (routerError) {
-    console.error("라우터 이동 실패:", routerError);
-
-    const params = new URLSearchParams(queryParams);
-    window.location.href = `/packaging/work?${params.toString()}`;
+    console.error('라우터 이동 실패:', routerError)
+    
+    const params = new URLSearchParams(queryParams)
+    window.location.href = `/packaging/work?${params.toString()}`
   }
 }
 
@@ -876,8 +868,7 @@ defineOptions({
 .package-line-container {
   min-height: 100vh;
   background-color: #f8f9fa;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* 브레드크럼 */

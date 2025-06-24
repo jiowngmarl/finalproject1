@@ -54,7 +54,11 @@
         >
           삭제
         </va-button>
-        <va-button preset="secondary" icon="download" @click="exportExcel">
+        <va-button 
+          preset="secondary"
+          icon="download"
+          @click="exportExcel"
+        >
           엑셀
         </va-button>
       </div>
@@ -254,7 +258,10 @@
                 v-model="form.address"
                 placeholder="주소를 입력하세요"
               />
-              <va-button preset="secondary" @click="searchAddress">
+              <va-button 
+                preset="secondary"
+                @click="searchAddress"
+              >
                 주소 검색
               </va-button>
             </div>
@@ -839,6 +846,7 @@ watch(itemsPerPage, () => {
   display: flex;
   gap: 8px;
   margin-bottom: 16px;
+  justify-content: right;
 }
 
 /* 테이블 */
