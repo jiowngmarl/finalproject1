@@ -49,8 +49,6 @@ const selectResultList =
       wr.result_id,
       wrd.result_remark,
       wrd.result_detail,
-      wrd.product_qual_qty,
-      wrd.process_defective_qty,
       p.product_name,
       p.product_stand,
       pc.process_code,
