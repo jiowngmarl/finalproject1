@@ -113,7 +113,7 @@
             >
               <td class="border border-gray-200 px-3 py-2 font-medium">{{ workOrder.work_order_no }}</td>
               <td class="border border-gray-200 px-3 py-2">
-                <span class="text-blue-700 font-medium">{{ workOrder.product_summary }}</span>
+                <span class="text font-medium">{{ workOrder.product_summary }}</span>
               </td>
               <td class="border border-gray-200 px-3 py-2 text-center">
                 <span class="font-semibold">{{ formatNumber(workOrder.total_qty) }}</span>

@@ -2,6 +2,7 @@ const deleteResult = `DELETE FROM work_result WHERE work_order_no = ?;`;
 
 const getProcessCodesByGroupQuery = `
   SELECT process_code,
+         process_seq,
          code_value
   FROM   process
   WHERE  process_group_code = ?
@@ -48,8 +49,6 @@ const selectResultList =
       wr.result_id,
       wrd.result_remark,
       wrd.result_detail,
-      wrd.product_qual_qty,
-      wrd.process_defective_qty,
       p.product_name,
       p.product_stand,
       pc.process_code,
@@ -158,8 +157,9 @@ const insertResultDetail =
   INSERT INTO work_result_detail(
                             result_id,
                             process_code,
+                            process_seq,
                             eq_type_code)
-  VALUES(?, ?, ?)
+  VALUES(?, ?, ?, ?)
 `
 ;
 
