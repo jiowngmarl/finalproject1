@@ -1,6 +1,6 @@
 <template>
   <div class="package-line-container">
-    <!-- 1단계: 포장 타입 선택 -->
+    <!-- 1단계: 포장 타입 선택 !!!!-->
     <div
       v-if="currentStep === 'package-type-selection'"
       class="package-type-selection"
@@ -273,11 +273,15 @@
           <div class="line-header">
             <h3 class="line-name">{{ line.line_name }}</h3>
 <<<<<<< HEAD
+<<<<<<< HEAD
             <div v-if="isRecommendedLine(line)" class="recommended-badge">
             </div>
 =======
             <div v-if="isRecommendedLine(line)" class="recommended-badge"></div>
 >>>>>>> main
+=======
+            <div v-if="isRecommendedLine(line)" class="recommended-badge"></div>
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
           </div>
 
           <div class="line-status">
@@ -583,6 +587,7 @@ onBeforeMount(() => {
 // 컴포넌트 마운트 시 라인 목록 로드
 onMounted(async () => {
 <<<<<<< HEAD
+<<<<<<< HEAD
   console.log('컴포넌트 마운트 - 라인 목록 로드 시작')
   
   // 현재 사용자 정보 먼저 로드
@@ -648,6 +653,8 @@ async function loadCurrentEmployee() {
       position: '작업자'
     }
 =======
+=======
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
   console.log("컴포넌트 마운트 - 라인 목록 로드 시작");
 
   // 현재 사용자 정보 먼저 로드
@@ -713,7 +720,10 @@ async function loadCurrentEmployee() {
       department: "포장부",
       position: "작업자",
     };
+<<<<<<< HEAD
 >>>>>>> main
+=======
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
   }
 }
 
@@ -820,11 +830,15 @@ function isRecommendedLine(line) {
   ) {
     // 외포장 시 특정 조건의 라인을 추천
 <<<<<<< HEAD
+<<<<<<< HEAD
     return line.line_state === 's2' && 
            line.line_type === 'OUTER'
 =======
     return line.line_state === "s2" && line.line_type === "OUTER";
 >>>>>>> main
+=======
+    return line.line_state === "s2" && line.line_type === "OUTER";
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
   }
   return false;
 }
@@ -858,6 +872,7 @@ async function confirmStartWork() {
 // navigateToWorkPage 수정 - 사용자 정보 확실히 전달
 function navigateToWorkPage(line) {
 <<<<<<< HEAD
+<<<<<<< HEAD
   console.log('작업 페이지로 이동:', line)
   console.log('현재 사용자 정보:', currentEmployee.value)
   
@@ -866,12 +881,18 @@ function navigateToWorkPage(line) {
   console.log("현재 사용자 정보:", currentEmployee.value);
 
 >>>>>>> main
+=======
+  console.log("작업 페이지로 이동:", line);
+  console.log("현재 사용자 정보:", currentEmployee.value);
+
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
   const queryParams = {
     line_id: line.line_id,
     line_name: line.line_name,
     line_type: line.line_type,
     product_code: line.product_code,
     product_name: line.product_name,
+<<<<<<< HEAD
 <<<<<<< HEAD
     work_no: line.curr_work_no || '',
     return_to: 'package_line',
@@ -904,6 +925,8 @@ function navigateToWorkPage(line) {
   }
   
 =======
+=======
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
     work_no: line.curr_work_no || "",
     return_to: "package_line",
     current_package_type: selectedPackageType.value,
@@ -938,7 +961,10 @@ function navigateToWorkPage(line) {
     queryParams.next_step = "OUTER";
   }
 
+<<<<<<< HEAD
 >>>>>>> main
+=======
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
   try {
     router.push({
       name: "package_work",
@@ -946,6 +972,7 @@ function navigateToWorkPage(line) {
     });
     console.log("작업 페이지로 이동 성공");
   } catch (routerError) {
+<<<<<<< HEAD
 <<<<<<< HEAD
     console.error('라우터 이동 실패:', routerError)
     const params = new URLSearchParams(queryParams)
@@ -955,6 +982,11 @@ function navigateToWorkPage(line) {
     const params = new URLSearchParams(queryParams);
     window.location.href = `/packaging/work?${params.toString()}`;
 >>>>>>> main
+=======
+    console.error("라우터 이동 실패:", routerError);
+    const params = new URLSearchParams(queryParams);
+    window.location.href = `/packaging/work?${params.toString()}`;
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
   }
 }
 

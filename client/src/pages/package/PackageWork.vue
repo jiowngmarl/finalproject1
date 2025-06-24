@@ -109,6 +109,7 @@
 
                     <!-- 실제 DB에서 조회된 작업번호 표시 (실제 제품명 적용) -->
 <<<<<<< HEAD
+<<<<<<< HEAD
                     <option 
                       v-if="availableWork" 
                       :value="availableWork.result_detail"
@@ -116,13 +117,18 @@
                     >
                       {{ availableWork.result_detail || '작업번호없음' }} - 
 =======
+=======
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
                     <option
                       v-if="availableWork"
                       :value="availableWork.result_detail"
                       class="available-option"
                     >
                       {{ availableWork.result_detail || "작업번호없음" }} -
+<<<<<<< HEAD
 >>>>>>> main
+=======
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
                       {{ getDisplayProductName(availableWork) }}
                     </option>
                   </select>

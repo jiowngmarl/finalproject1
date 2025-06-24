@@ -84,6 +84,7 @@ class PackageService {
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     // 제품코드 추출 (라인명에서)
     extractProductCodeFromLine(lineName) {
         if (!lineName) return 'BJA-STD-10';
@@ -195,6 +196,8 @@ class PackageService {
             `);
             console.log('최근 작업:', recentWork);
 =======
+=======
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
    // 제품코드 추출 로직도 검증
 extractProductCodeFromLine(lineName) {
     if (!lineName) return 'BJA-STD-10';
@@ -320,6 +323,7 @@ extractProductCodeFromLine(lineName) {
             }
             
             return allWork;
+<<<<<<< HEAD
 >>>>>>> main
             
             return { sampleData, processDistribution, recentWork };
@@ -485,6 +489,11 @@ extractProductCodeFromLine(lineName) {
             }
             
 =======
+=======
+            
+            return { sampleData, processDistribution, recentWork };
+        } catch (error) {
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
             console.error('단순한 내포장 작업번호 조회 실패:', error);
             return [];
         }
@@ -637,7 +646,10 @@ extractProductCodeFromLine(lineName) {
                 return null; // 단순 조회로 넘어감
             }
             
+<<<<<<< HEAD
 >>>>>>> main
+=======
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
             if (processInfo.length === 0) {
                 console.log('공정흐름도 정보 없음');
                 return null;
@@ -729,6 +741,7 @@ extractProductCodeFromLine(lineName) {
         }
     }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     // 외포장 작업번호 조회 (Process7 = 포장공정 전체)
     async getOuterWorkByLine(lineId, lineName) {
@@ -944,6 +957,8 @@ extractProductCodeFromLine(lineName) {
                         success: false,
                         message: `작업이 이미 ${status} 상태입니다. p1(대기중) 상태에서만 시작할 수 있습니다.`,
 =======
+=======
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
     // 외포장 작업번호 조회 (Process7 = 포장공정 전체) - 제품코드 통일
 
 // 외포장도 동일하게 수정
@@ -1723,11 +1738,15 @@ async completeInnerPackaging(resultDetail, endTime, passQty, managerId) {
                         action: 'start',
                         message: '외포장 시작 가능 (내포장 완료됨)',
                         note: '외포장 워크플로우는 별도 구현 필요',
+<<<<<<< HEAD
 >>>>>>> main
+=======
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
                         current_status: status
                     };
                 } else {
                     return {
+<<<<<<< HEAD
 <<<<<<< HEAD
                         success: false,
                         message: '해당 내포장 작업번호를 찾을 수 없습니다.',
@@ -1737,11 +1756,17 @@ async completeInnerPackaging(resultDetail, endTime, passQty, managerId) {
                         reason: '내포장을 먼저 완료해야 합니다.',
                         current_status: status
 >>>>>>> main
+=======
+                        available: false,
+                        reason: '내포장을 먼저 완료해야 합니다.',
+                        current_status: status
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
                     };
                 }
             }
             
             return {
+<<<<<<< HEAD
 <<<<<<< HEAD
                 success: true,
                 message: '내포장 작업이 시작되었습니다',
@@ -1842,6 +1867,8 @@ async completeInnerPackaging(resultDetail, endTime, passQty, managerId) {
                 error: error.message,
                 details: '내포장 작업 완료 중 오류가 발생했습니다.'
 =======
+=======
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
                 available: false,
                 reason: '알 수 없는 작업 타입입니다.',
                 current_status: status
@@ -1853,11 +1880,15 @@ async completeInnerPackaging(resultDetail, endTime, passQty, managerId) {
                 available: false,
                 reason: '상태 확인 중 오류가 발생했습니다.',
                 error: error.message
+<<<<<<< HEAD
 >>>>>>> main
+=======
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
             };
         }
     }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     // 외포장 작업 시작 - Process7에서 p5→p7
     async startOuterPackaging(resultDetail, startTime, managerId, passQty) {
@@ -2110,6 +2141,8 @@ async completeInnerPackaging(resultDetail, endTime, passQty, managerId) {
         console.log('내포장 완료 (p5) 후 외포장 시작 (p7)으로 직접 전환');
         return; // Process7에서는 별도 생성 불필요
 =======
+=======
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
     // 외포장 단계 생성 제거 (Process7에서 code_value로 관리)
     async autoCreateOuterStep(innerResultDetail, passQty) {
         console.log(`Process7에서는 별도 외포장 단계 생성 불필요: ${innerResultDetail}`);
@@ -2127,15 +2160,21 @@ async completeInnerPackaging(resultDetail, endTime, passQty, managerId) {
                 status: 'inner_completed_ready_for_outer'
             }
         };
+<<<<<<< HEAD
 >>>>>>> main
+=======
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
     }
 
     async autoCreateOuterStepForOuter(innerResultDetail, resultId, passQty) {
         console.log(`Process7에서는 별도 외포장 단계 생성 불필요: ${innerResultDetail}`);
 <<<<<<< HEAD
+<<<<<<< HEAD
         console.log('내포장 완료 (p5) 후 외포장 시작 (p7)으로 직접 전환');
         return; // Process7에서는 별도 생성 불필요
 =======
+=======
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
         console.log('내포장 완료 (p5) 후 외포장 관련 별도 처리 필요 시 여기서 구현');
         
         return {
@@ -2148,7 +2187,10 @@ async completeInnerPackaging(resultDetail, endTime, passQty, managerId) {
                 status: 'inner_completed_ready_for_outer'
             }
         };
+<<<<<<< HEAD
 >>>>>>> main
+=======
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
     }
 
     // BigInt 변환
@@ -2190,9 +2232,13 @@ module.exports = {
     // Process7 포장 작업 설정
     setupInnerPackagingWork: function(...args) { return packageService.setupInnerPackagingWork(...args); },
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     getInnerWorkByProjectKnowledge: function(...args) { return packageService.getInnerWorkByProjectKnowledge(...args); },
 >>>>>>> main
+=======
+    getInnerWorkByProjectKnowledge: function(...args) { return packageService.getInnerWorkByProjectKnowledge(...args); },
+>>>>>>> ff812a9966c4f27e58b6fbed9e9815f919146149
     
     // 디버깅 및 구조 확인
     checkDatabaseStructure: function(...args) { return packageService.checkDatabaseStructure(...args); },
