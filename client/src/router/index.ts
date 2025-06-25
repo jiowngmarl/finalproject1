@@ -213,6 +213,11 @@ const routes: Array<RouteRecordRaw> = [
             path: 'quality-management',
             component: () => import('../pages/quality/QualityListPage.vue'),
           },
+                    {
+            name: 'quality-insertList',
+            path: 'quality-insertList',
+            component: () => import('../pages/quality/qualityInsertList.vue'),
+          },
           {
             name: 'faulty-management',
             path: 'faulty-management',
