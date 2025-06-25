@@ -1,26 +1,26 @@
-import PaymentCardEdit from './PaymentCardEdit.vue'
-import { PaymentSystemType, PaymentCard } from '../../types'
+import PaymentCardEdit from "./PaymentCardEdit.vue";
+import { PaymentSystemType, PaymentCard } from "../../types";
 
 export default {
-  title: 'PaymentCardEdit',
+  title: "PaymentCardEdit",
   component: PaymentCardEdit,
-  tags: ['autodocs'],
-}
+  tags: ["autodocs"],
+};
 
 export const Default = () => ({
   components: { PaymentCardEdit },
   data() {
     return {
-      lastEvent: '',
+      lastEvent: "",
       paymentCard: {
-        id: '1',
-        name: 'Main card',
+        id: "1",
+        name: "Main card",
         isPrimary: true,
         paymentSystem: PaymentSystemType.Visa,
-        cardNumberMasked: '****1679',
-        expirationDate: '09/24',
+        cardNumberMasked: "****1679",
+        expirationDate: "09/24",
       } satisfies PaymentCard,
-    }
+    };
   },
   template: `
     <PaymentCardEdit
@@ -31,25 +31,25 @@ export const Default = () => ({
     />
     <br>
     <p>Last event: <span data-testid>{{ lastEvent }}</span></p>`,
-})
+});
 
 export const Empty = () => ({
   components: { PaymentCardEdit },
   data() {
     return {
       paymentCard: {
-        id: '',
-        name: '',
+        id: "",
+        name: "",
         isPrimary: false,
         paymentSystem: PaymentSystemType.Visa,
-        cardNumberMasked: '',
-        expirationDate: '',
+        cardNumberMasked: "",
+        expirationDate: "",
       } satisfies PaymentCard,
-    }
+    };
   },
   template: `
     <PaymentCardEdit
         :paymentCard="paymentCard"
         submitText="Create Card"
     />`,
-})
+});

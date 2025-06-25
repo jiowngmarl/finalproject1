@@ -3,12 +3,12 @@
     <!-- 좌측: 사원 목록 -->
     <div class="employee-list-panel">
       <h1 class="page-title">사원 관리</h1>
-      
+
       <!-- 검색 및 필터 영역 -->
       <div class="search-filter-area">
         <div class="search-bar">
-          <va-input 
-            v-model="searchText" 
+          <va-input
+            v-model="searchText"
             placeholder="사번, 이름으로 검색..."
             class="search-input"
           >
@@ -18,7 +18,7 @@
           </va-input>
           <va-button @click="handleSearch">조회</va-button>
         </div>
-        
+
         <!-- 필터 드롭다운들 -->
         <div class="filter-row">
           <div class="filter-item">
@@ -75,8 +75,8 @@
 
       <!-- 액션 버튼 (관리자 권한만) -->
       <div class="action-buttons" v-if="canManageAdmin">
-        <va-button 
-          preset="secondary" 
+        <va-button
+          preset="secondary"
           icon="delete_outline"
           @click="deleteSelected"
           :disabled="selectedIds.length === 0"
@@ -100,7 +100,10 @@
             <tr>
               <!-- 체크박스는 관리자 권한이 있을 때만 -->
               <th width="40" v-if="canManageAdmin">
-                <va-checkbox v-model="selectAll" @update:model-value="handleSelectAll" />
+                <va-checkbox
+                  v-model="selectAll"
+                  @update:model-value="handleSelectAll"
+                />
               </th>
               <th>사번</th>
               <th>이름</th>
@@ -111,13 +114,15 @@
             </tr>
           </thead>
           <tbody>
-            <tr 
-              v-for="(employee, index) in paginatedEmployees" 
+            <tr
+              v-for="(employee, index) in paginatedEmployees"
               :key="employee.employee_id"
               @click="canManageAdmin ? selectEmployee(employee) : null"
-              :class="{ 
-                'selected': selectedEmployee?.employee_id === employee.employee_id && canManageAdmin,
-                'read-only': !canManageAdmin
+              :class="{
+                selected:
+                  selectedEmployee?.employee_id === employee.employee_id &&
+                  canManageAdmin,
+                'read-only': !canManageAdmin,
               }"
             >
               <!-- 체크박스는 관리자 권한이 있을 때만 -->
@@ -136,7 +141,7 @@
             </tr>
           </tbody>
         </table>
-        
+
         <!-- 데이터 없을 때 표시 -->
         <div v-if="filteredEmployees.length === 0" class="no-data">
           검색 결과가 없습니다.
@@ -146,7 +151,10 @@
       <!-- 페이지네이션 -->
       <div class="pagination-area">
         <div class="page-info">
-          {{ startIndex + 1 }}-{{ Math.min(currentPage * itemsPerPage, filteredEmployees.length) }} of {{ filteredEmployees.length }}
+          {{ startIndex + 1 }}-{{
+            Math.min(currentPage * itemsPerPage, filteredEmployees.length)
+          }}
+          of {{ filteredEmployees.length }}
         </div>
         <div class="page-controls">
           <span>Rows per page: </span>
@@ -176,7 +184,7 @@
         <div class="action-buttons">
           <va-button preset="secondary" @click="resetForm">초기화</va-button>
           <va-button @click="saveEmployee">
-            {{ selectedEmployee ? '수정' : '저장' }}
+            {{ selectedEmployee ? "수정" : "저장" }}
           </va-button>
         </div>
       </div>
@@ -186,8 +194,8 @@
         <div class="form-row">
           <div class="form-group">
             <label>이름 <span class="required">*</span></label>
-            <va-input 
-              v-model="form.employeeName" 
+            <va-input
+              v-model="form.employeeName"
               placeholder="이름을 입력하세요"
               :error="errors.employeeName"
               :error-messages="errors.employeeName ? '이름은 필수입니다' : ''"
@@ -229,7 +237,7 @@
         <div class="form-row">
           <div class="form-group">
             <label>입사일</label>
-            <va-date-input 
+            <va-date-input
               v-model="form.hireDate"
               :error="errors.hireDate"
               :error-messages="errors.hireDate ? '입사일을 선택하세요' : ''"
@@ -241,12 +249,12 @@
         <div class="form-row">
           <div class="form-group">
             <label>연락처</label>
-            <va-input 
-              v-model="form.phone" 
+            <va-input
+              v-model="form.phone"
               placeholder="숫자만 입력하세요"
               inputmode="numeric"
               pattern="[0-9]*"
-              @input="e => handlePhoneInput(e.target.value)"
+              @input="(e) => handlePhoneInput(e.target.value)"
               maxlength="15"
             />
           </div>
@@ -256,8 +264,8 @@
         <div class="form-row">
           <div class="form-group">
             <label>이메일</label>
-            <va-input 
-              v-model="form.email" 
+            <va-input
+              v-model="form.email"
               placeholder="example@company.com"
               type="email"
             />
@@ -287,8 +295,8 @@
         <div class="form-row">
           <div class="form-group full-width">
             <label>비고</label>
-            <va-textarea 
-              v-model="form.remarks" 
+            <va-textarea
+              v-model="form.remarks"
               placeholder="비고사항을 입력하세요"
               :min-rows="3"
               :max-rows="5"
@@ -306,11 +314,11 @@
         <p>사원 등록 및 수정은 관리자 권한이 필요합니다.</p>
         <div class="current-permission">
           <va-chip color="info" size="small">
-            현재 권한: {{ userRole || '조회 전용' }}
+            현재 권한: {{ userRole || "조회 전용" }}
           </va-chip>
         </div>
         <p class="permission-desc">
-          사원 목록은 조회할 수 있지만,<br>
+          사원 목록은 조회할 수 있지만,<br />
           등록, 수정, 삭제는 관리자만 가능합니다.
         </p>
       </div>
@@ -319,142 +327,160 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import axios from 'axios'
-import { useAuthStore } from '@/stores/authStore'
+import { ref, computed, onMounted, watch } from "vue";
+import axios from "axios";
+import { useAuthStore } from "@/stores/authStore";
 
 // 인증 스토어 사용
-const authStore = useAuthStore()
-const { canManageAdmin, userRole } = authStore
+const authStore = useAuthStore();
+const { canManageAdmin, userRole } = authStore;
 
 // 타입 정의
 interface Employee {
-  employee_id: string
-  employee_name: string
-  department_code: string
-  position: string
-  hire_date: string
-  phone?: string
-  email?: string
-  employment_status: 'Y' | 'N'
-  remarks?: string
+  employee_id: string;
+  employee_name: string;
+  department_code: string;
+  position: string;
+  hire_date: string;
+  phone?: string;
+  email?: string;
+  employment_status: "Y" | "N";
+  remarks?: string;
 }
 
 interface Form {
-  employeeId: string
-  employeeName: string
-  departmentCode: string
-  position: string
-  hireDate: Date | null
-  phone: string
-  email: string
-  employmentStatus: 'Y' | 'N'
-  remarks: string
+  employeeId: string;
+  employeeName: string;
+  departmentCode: string;
+  position: string;
+  hireDate: Date | null;
+  phone: string;
+  email: string;
+  employmentStatus: "Y" | "N";
+  remarks: string;
 }
 
 // 상태 관리
-const searchText = ref('')
-const selectedIds = ref<string[]>([])
-const selectAll = ref(false)
-const currentPage = ref(1)
-const itemsPerPage = ref(10)
-const employees = ref<Employee[]>([])
-const selectedEmployee = ref<Employee | null>(null)
-const loading = ref(false)
+const searchText = ref("");
+const selectedIds = ref<string[]>([]);
+const selectAll = ref(false);
+const currentPage = ref(1);
+const itemsPerPage = ref(10);
+const employees = ref<Employee[]>([]);
+const selectedEmployee = ref<Employee | null>(null);
+const loading = ref(false);
 
 // 필터 상태
 const filters = ref({
-  employeeId: '',
-  employeeName: '',
-  department: '',
-  position: '',
-  employmentStatus: ''
-})
+  employeeId: "",
+  employeeName: "",
+  department: "",
+  position: "",
+  employmentStatus: "",
+});
 
 // 폼 데이터
 const form = ref<Form>({
-  employeeId: '',
-  employeeName: '',
-  departmentCode: '',
-  position: '',
+  employeeId: "",
+  employeeName: "",
+  departmentCode: "",
+  position: "",
   hireDate: null,
-  phone: '',
-  email: '',
-  employmentStatus: 'Y',
-  remarks: ''
-})
+  phone: "",
+  email: "",
+  employmentStatus: "Y",
+  remarks: "",
+});
 
 // 폼 검증 에러
 const errors = ref({
   employeeName: false,
   departmentCode: false,
   position: false,
-  hireDate: false
-})
+  hireDate: false,
+});
 
 // 부서 매핑
 const departmentMap = {
-  '01': '생산',
-  '02': '자재',
-  '03': '포장',
-  '04': '설비',
-  '05': '품질',
-  '06': '물류',
-  '07': '영업'
-}
+  "01": "생산",
+  "02": "자재",
+  "03": "포장",
+  "04": "설비",
+  "05": "품질",
+  "06": "물류",
+  "07": "영업",
+};
 
 // 필터 옵션들
-const employeeIdOptions = ref<string[]>([])
-const employeeNameOptions = ref<string[]>([])
+const employeeIdOptions = ref<string[]>([]);
+const employeeNameOptions = ref<string[]>([]);
 const departmentOptions = ref([
-  { text: '생산', value: '01' },
-  { text: '자재', value: '02' },
-  { text: '포장', value: '03' },
-  { text: '설비', value: '04' },
-  { text: '품질', value: '05' },
-  { text: '물류', value: '06' },
-  { text: '영업', value: '07' }
-])
-const positionOptions = ref<string[]>([])
-const positionSelectOptions = ref(['사원', '주임', '대리', '과장', '차장', '부장', '이사', '상무', '전무', '대표'])
+  { text: "생산", value: "01" },
+  { text: "자재", value: "02" },
+  { text: "포장", value: "03" },
+  { text: "설비", value: "04" },
+  { text: "품질", value: "05" },
+  { text: "물류", value: "06" },
+  { text: "영업", value: "07" },
+]);
+const positionOptions = ref<string[]>([]);
+const positionSelectOptions = ref([
+  "사원",
+  "주임",
+  "대리",
+  "과장",
+  "차장",
+  "부장",
+  "이사",
+  "상무",
+  "전무",
+  "대표",
+]);
 const employmentStatusOptions = ref([
-  { text: '재직', value: 'Y' },
-  { text: '퇴직', value: 'N' }
-])
+  { text: "재직", value: "Y" },
+  { text: "퇴직", value: "N" },
+]);
 
 // 필터링된 사원 목록
 const filteredEmployees = computed(() => {
-  return employees.value.filter(employee => {
+  return employees.value.filter((employee) => {
     // 검색어 필터
     const matchesSearch = !searchText.value || 
       String(employee.employee_id).toLowerCase().includes(searchText.value.toLowerCase()) ||
       employee.employee_name.toLowerCase().includes(searchText.value.toLowerCase())
     // 드롭다운 필터
-    const matchesFilters = 
-      (!filters.value.employeeId || employee.employee_id === filters.value.employeeId) &&
-      (!filters.value.employeeName || employee.employee_name === filters.value.employeeName) &&
-      (!filters.value.department || employee.department_code === filters.value.department) &&
-      (!filters.value.position || employee.position === filters.value.position) &&
-      (!filters.value.employmentStatus || employee.employment_status === filters.value.employmentStatus)
-    
-    return matchesSearch && matchesFilters
-  })
-})
+    const matchesFilters =
+      (!filters.value.employeeId ||
+        employee.employee_id === filters.value.employeeId) &&
+      (!filters.value.employeeName ||
+        employee.employee_name === filters.value.employeeName) &&
+      (!filters.value.department ||
+        employee.department_code === filters.value.department) &&
+      (!filters.value.position ||
+        employee.position === filters.value.position) &&
+      (!filters.value.employmentStatus ||
+        employee.employment_status === filters.value.employmentStatus);
+
+    return matchesSearch && matchesFilters;
+  });
+});
 
 // 페이지네이션
-const totalPages = computed(() => Math.ceil(filteredEmployees.value.length / itemsPerPage.value))
-const startIndex = computed(() => (currentPage.value - 1) * itemsPerPage.value)
+const totalPages = computed(() =>
+  Math.ceil(filteredEmployees.value.length / itemsPerPage.value),
+);
+const startIndex = computed(() => (currentPage.value - 1) * itemsPerPage.value);
 const paginatedEmployees = computed(() => {
-  const start = startIndex.value
-  const end = start + itemsPerPage.value
-  return filteredEmployees.value.slice(start, end)
-})
+  const start = startIndex.value;
+  const end = start + itemsPerPage.value;
+  return filteredEmployees.value.slice(start, end);
+});
 
 // 라이프사이클
 onMounted(async () => {
-  await fetchEmployees()
-  setupFilterOptions()
-})
+  await fetchEmployees();
+  setupFilterOptions();
+});
 
 // API 함수들
 async function fetchEmployees() {
@@ -464,40 +490,44 @@ async function fetchEmployees() {
     console.log('사원 데이터:', response.data)
     employees.value = response.data
   } catch (error) {
-    console.error('사원 목록 로드 실패:', error)
+    console.error("사원 목록 로드 실패:", error);
     // Mock 데이터
     employees.value = [
       {
-        employee_id: '2024001',
-        employee_name: '홍길동',
-        department_code: '07',
-        position: '과장',
-        hire_date: '2023-05-01',
-        phone: '010-1234-5678',
-        email: 'hong@company.com',
-        employment_status: 'Y'
+        employee_id: "2024001",
+        employee_name: "홍길동",
+        department_code: "07",
+        position: "과장",
+        hire_date: "2023-05-01",
+        phone: "010-1234-5678",
+        email: "hong@company.com",
+        employment_status: "Y",
       },
       {
-        employee_id: '2024002',
-        employee_name: '김철수',
-        department_code: '01',
-        position: '대리',
-        hire_date: '2024-01-15',
-        phone: '010-9876-5432',
-        email: 'kim@company.com',
-        employment_status: 'Y'
-      }
-    ]
+        employee_id: "2024002",
+        employee_name: "김철수",
+        department_code: "01",
+        position: "대리",
+        hire_date: "2024-01-15",
+        phone: "010-9876-5432",
+        email: "kim@company.com",
+        employment_status: "Y",
+      },
+    ];
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 // 필터 옵션 설정
 function setupFilterOptions() {
-  employeeIdOptions.value = [...new Set(employees.value.map(e => e.employee_id))]
-  employeeNameOptions.value = [...new Set(employees.value.map(e => e.employee_name))]
-  positionOptions.value = [...new Set(employees.value.map(e => e.position))]
+  employeeIdOptions.value = [
+    ...new Set(employees.value.map((e) => e.employee_id)),
+  ];
+  employeeNameOptions.value = [
+    ...new Set(employees.value.map((e) => e.employee_name)),
+  ];
+  positionOptions.value = [...new Set(employees.value.map((e) => e.position))];
 }
 
 // 부서명 가져오기
@@ -507,24 +537,26 @@ function getDepartmentName(code: string) {
 
 // 메서드들
 function handleSearch() {
-  currentPage.value = 1
+  currentPage.value = 1;
 }
 
 function handleSelectAll(value: boolean) {
   if (value) {
-    selectedIds.value = paginatedEmployees.value.map(employee => employee.employee_id)
+    selectedIds.value = paginatedEmployees.value.map(
+      (employee) => employee.employee_id,
+    );
   } else {
-    selectedIds.value = []
+    selectedIds.value = [];
   }
 }
 
 function selectEmployee(employee: Employee) {
   if (!canManageAdmin) {
-    console.log('사원 수정 권한이 없습니다.')
-    return
+    console.log("사원 수정 권한이 없습니다.");
+    return;
   }
 
-  selectedEmployee.value = employee
+  selectedEmployee.value = employee;
   // 폼에 데이터 채우기
   form.value = {
     employeeId: employee.employee_id,
@@ -532,29 +564,29 @@ function selectEmployee(employee: Employee) {
     departmentCode: employee.department_code,
     position: employee.position,
     hireDate: employee.hire_date ? new Date(employee.hire_date) : null,
-    phone: employee.phone || '',
-    email: employee.email || '',
+    phone: employee.phone || "",
+    email: employee.email || "",
     employmentStatus: employee.employment_status,
-    remarks: employee.remarks || ''
-  }
+    remarks: employee.remarks || "",
+  };
   // 에러 초기화
-  resetErrors()
+  resetErrors();
 }
 
 function resetForm() {
-  selectedEmployee.value = null
+  selectedEmployee.value = null;
   form.value = {
-    employeeId: '',
-    employeeName: '',
-    departmentCode: '',
-    position: '',
+    employeeId: "",
+    employeeName: "",
+    departmentCode: "",
+    position: "",
     hireDate: null,
-    phone: '',
-    email: '',
-    employmentStatus: 'Y',
-    remarks: ''
-  }
-  resetErrors()
+    phone: "",
+    email: "",
+    employmentStatus: "Y",
+    remarks: "",
+  };
+  resetErrors();
 }
 
 function resetErrors() {
@@ -562,62 +594,64 @@ function resetErrors() {
     employeeName: false,
     departmentCode: false,
     position: false,
-    hireDate: false
-  }
+    hireDate: false,
+  };
 }
 
 // 폼 검증
 function validateForm() {
-  resetErrors()
-  let isValid = true
-  
+  resetErrors();
+  let isValid = true;
+
   if (!form.value.employeeName.trim()) {
-    errors.value.employeeName = true
-    isValid = false
+    errors.value.employeeName = true;
+    isValid = false;
   }
-  
+
   if (!form.value.departmentCode) {
-    errors.value.departmentCode = true
-    isValid = false
+    errors.value.departmentCode = true;
+    isValid = false;
   }
-  
+
   if (!form.value.position) {
-    errors.value.position = true
-    isValid = false
+    errors.value.position = true;
+    isValid = false;
   }
-  
+
   if (!form.value.hireDate) {
-    errors.value.hireDate = true
-    isValid = false
+    errors.value.hireDate = true;
+    isValid = false;
   }
-  
-  return isValid
+
+  return isValid;
 }
 
 // 저장
 async function saveEmployee() {
   if (!canManageAdmin) {
-    alert('사원 관리 권한이 없습니다.')
-    return
+    alert("사원 관리 권한이 없습니다.");
+    return;
   }
 
   if (!validateForm()) {
-    return
+    return;
   }
-  
+
   try {
     const employeeData = {
       employee_name: form.value.employeeName,
       department_code: form.value.departmentCode,
       position: form.value.position,
-      hire_date: form.value.hireDate ? formatDate(form.value.hireDate.toISOString()) : null,
+      hire_date: form.value.hireDate
+        ? formatDate(form.value.hireDate.toISOString())
+        : null,
       phone: form.value.phone,
       email: form.value.email,
       employment_status: form.value.employmentStatus,
-      remarks: form.value.remarks
-    }
-    console.log('전송할 데이터: ', employeeData);
-    
+      remarks: form.value.remarks,
+    };
+    console.log("전송할 데이터: ", employeeData);
+
     if (selectedEmployee.value) {
       // 수정
       await axios.put(`/employee/${selectedEmployee.value.employee_id}`, employeeData)
@@ -627,34 +661,36 @@ async function saveEmployee() {
       await axios.post('/employee', employeeData)
       alert('사원이 등록되었습니다.')
     }
-    
+
     // 목록 새로고침
-    await fetchEmployees()
-    resetForm()
+    await fetchEmployees();
+    resetForm();
   } catch (error) {
-    console.error('사원 저장 실패:', error)
-    alert('사원 저장에 실패했습니다.')
+    console.error("사원 저장 실패:", error);
+    alert("사원 저장에 실패했습니다.");
   }
 }
 
 // 선택 삭제
 async function deleteSelected() {
   if (!canManageAdmin) {
-    alert('사원 관리 권한이 없습니다.')
-    return
+    alert("사원 관리 권한이 없습니다.");
+    return;
   }
 
-  console.log('삭제할 사원들: ', selectedIds.value);
+  console.log("삭제할 사원들: ", selectedIds.value);
 
-  if (selectedIds.value.length === 0) return
+  if (selectedIds.value.length === 0) return;
 
-  if (!confirm(`선택한 ${selectedIds.value.length}명의 사원을 삭제하시겠습니까?`)) {
-    return
+  if (
+    !confirm(`선택한 ${selectedIds.value.length}명의 사원을 삭제하시겠습니까?`)
+  ) {
+    return;
   }
 
   try {
-    console.log('다중 삭제 요청 시작');
-    
+    console.log("다중 삭제 요청 시작");
+
     // 서버의 다중 삭제 API 호출
     const response = await axios.post('/employee/delete-multiple', {
       ids: selectedIds.value
@@ -666,56 +702,70 @@ async function deleteSelected() {
       alert(`${response.data.deletedCount}명의 사원이 삭제되었습니다.`);
     } else {
       if (response.data.failedCount > 0) {
-        alert(`${response.data.deletedCount}명 삭제 완료, ${response.data.failedCount}명 삭제 실패\n${response.data.message}`);
+        alert(
+          `${response.data.deletedCount}명 삭제 완료, ${response.data.failedCount}명 삭제 실패\n${response.data.message}`,
+        );
       } else {
-        alert('삭제에 실패했습니다.');
+        alert("삭제에 실패했습니다.");
       }
     }
-    
+
     // 목록 새로고침
     await fetchEmployees();
     selectedIds.value = [];
     selectAll.value = false;
-    
   } catch (error) {
-    console.error('사원 삭제 실패:', error);
-    alert('사원 삭제에 실패했습니다.');
+    console.error("사원 삭제 실패:", error);
+    alert("사원 삭제에 실패했습니다.");
   }
 }
 
 // 엑셀 내보내기
 function exportExcel() {
-  console.log('엑셀 내보내기')
-  alert('엑셀 내보내기 기능은 준비 중입니다.')
+  console.log("엑셀 내보내기");
+  alert("엑셀 내보내기 기능은 준비 중입니다.");
 }
 
 // 전화번호 자동 포맷팅
 function handlePhoneInput(value: string) {
-  const phonenumbers = value.replace(/[^0-9]/g, '')
-  
+  const phonenumbers = value.replace(/[^0-9]/g, "");
+
   if (phonenumbers.length == 11) {
-    form.value.phone = `${phonenumbers.slice(0, 3)}-${phonenumbers.slice(3, 7)}-${phonenumbers.slice(7)}`
+    form.value.phone = `${phonenumbers.slice(0, 3)}-${phonenumbers.slice(
+      3,
+      7,
+    )}-${phonenumbers.slice(7)}`;
   } else if (phonenumbers.length == 9) {
-    form.value.phone = `${phonenumbers.slice(0,2)}-${phonenumbers.slice(2, 5)}-${phonenumbers.slice(5)}`
+    form.value.phone = `${phonenumbers.slice(0, 2)}-${phonenumbers.slice(
+      2,
+      5,
+    )}-${phonenumbers.slice(5)}`;
   } else if (phonenumbers.length == 10) {
-    form.value.phone = `${phonenumbers.slice(0,3)}-${phonenumbers.slice(3, 6)}-${phonenumbers.slice(6)}`
+    form.value.phone = `${phonenumbers.slice(0, 3)}-${phonenumbers.slice(
+      3,
+      6,
+    )}-${phonenumbers.slice(6)}`;
   }
 }
 
 // 날짜 포맷
 function formatDate(dateString: string) {
-  if (!dateString) return '-'
-  return dateString.split('T')[0]
+  if (!dateString) return "-";
+  return dateString.split("T")[0];
 }
 
 // 감시자
-watch(filters, () => {
-  currentPage.value = 1
-}, { deep: true })
+watch(
+  filters,
+  () => {
+    currentPage.value = 1;
+  },
+  { deep: true },
+);
 
 watch(itemsPerPage, () => {
-  currentPage.value = 1
-})
+  currentPage.value = 1;
+});
 </script>
 
 <style scoped>
@@ -739,7 +789,7 @@ watch(itemsPerPage, () => {
   padding: 24px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   height: auto;
   max-height: 1025px;
 }
@@ -874,7 +924,7 @@ watch(itemsPerPage, () => {
   background: white;
   border-radius: 8px;
   padding: 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   height: fit-content;
   position: sticky;
   top: 20px;
@@ -938,14 +988,16 @@ watch(itemsPerPage, () => {
 }
 
 /* 유틸리티 클래스 */
-.ml-3 { margin-left: 12px; }
+.ml-3 {
+  margin-left: 12px;
+}
 
 /* 반응형 */
 @media (max-width: 100vw) {
   .filter-row {
     grid-template-columns: repeat(3, 1fr);
   }
-  
+
   .employee-detail-panel {
     flex: 0 0 400px;
   }
@@ -955,12 +1007,12 @@ watch(itemsPerPage, () => {
   .employee-page-container {
     flex-direction: column;
   }
-  
+
   .employee-list-panel {
     min-width: unset;
     max-height: unset;
   }
-  
+
   .employee-detail-panel {
     flex: 1;
     width: 100%;
@@ -972,11 +1024,11 @@ watch(itemsPerPage, () => {
   .filter-row {
     grid-template-columns: 1fr;
   }
-  
+
   .employee-table {
     font-size: 12px;
   }
-  
+
   .employee-table th,
   .employee-table td {
     padding: 8px 4px;

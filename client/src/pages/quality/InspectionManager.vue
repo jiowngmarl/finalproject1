@@ -17,14 +17,32 @@
           label="공정명"
           class="quarter-width"
         />
-        <va-input v-model="form.inspValueType" label="판정방식" class="quarter-width" />
+        <va-input
+          v-model="form.inspValueType"
+          label="판정방식"
+          class="quarter-width"
+        />
         <va-input v-model="form.inspUnit" label="단위" class="quarter-width" />
       </div>
 
       <div class="input-row">
-        <va-input v-model="form.inspValueQty" label="기준값" class="quarter-width" />
-        <va-input v-model="form.inspValueMin" label="최소범위" class="quarter-width" type="number" />
-        <va-input v-model="form.inspValueMax" label="최대범위" class="quarter-width" type="number" />
+        <va-input
+          v-model="form.inspValueQty"
+          label="기준값"
+          class="quarter-width"
+        />
+        <va-input
+          v-model="form.inspValueMin"
+          label="최소범위"
+          class="quarter-width"
+          type="number"
+        />
+        <va-input
+          v-model="form.inspValueMax"
+          label="최대범위"
+          class="quarter-width"
+          type="number"
+        />
       </div>
 
       <div class="input-row">
@@ -73,8 +91,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import axios from 'axios'
+import { ref, computed, onMounted, watch } from "vue";
+import axios from "axios";
 
 // 타입 정의
 interface InspectionItem {
@@ -90,32 +108,32 @@ interface InspectionItem {
 }
 
 // 상태 정의
-const inspectionList = ref<InspectionItem[]>([])
+const inspectionList = ref<InspectionItem[]>([]);
 
 const form = ref({
-  processInt: '', // ✅ string으로 변경
-  inspValueType: '',
-  inspUnit: '',
-  inspValueQty: '',
+  processInt: "", // ✅ string으로 변경
+  inspValueType: "",
+  inspUnit: "",
+  inspValueQty: "",
   inspValueMin: 0,
   inspValueMax: 0,
-  inspRemark: '',
-})
+  inspRemark: "",
+});
 
 // 공정명 select 옵션
-const processOptions = ref<{ process_int: string; process_name: string }[]>([]) // ✅ process_int도 string
+const processOptions = ref<{ process_int: string; process_name: string }[]>([]); // ✅ process_int도 string
 
 const resetForm = () => {
   form.value = {
-    processInt: '',
-    inspValueType: '',
-    inspUnit: '',
-    inspValueQty: '',
+    processInt: "",
+    inspValueType: "",
+    inspUnit: "",
+    inspValueQty: "",
     inspValueMin: 0,
     inspValueMax: 0,
-    inspRemark: '',
-  }
-}
+    inspRemark: "",
+  };
+};
 
 // 등록 요청
 const submitForm = async () => {
@@ -124,69 +142,73 @@ const submitForm = async () => {
       processInt: form.value.processInt,
       inspValueType: form.value.inspValueType,
       inspUnit: form.value.inspUnit,
-      inspValueQty: Number(form.value.inspValueQty),        
-      inspValueMin: Number(form.value.inspValueMin),       
-      inspValueMax: Number(form.value.inspValueMax), 
+      inspValueQty: Number(form.value.inspValueQty),
+      inspValueMin: Number(form.value.inspValueMin),
+      inspValueMax: Number(form.value.inspValueMax),
       inspRemark: form.value.inspRemark,
-    }
+    };
 
-    const res = await axios.post('/inspections/insert', payload)
+    const res = await axios.post("/inspections/insert", payload);
 
     if (res.data.success) {
-      alert('검사항목이 등록되었습니다!')
-      await loadInspectionList(form.value.processInt)
-      resetForm()
+      alert("검사항목이 등록되었습니다!");
+      await loadInspectionList(form.value.processInt);
+      resetForm();
     } else {
-      alert(res.data.message || '등록 실패')
+      alert(res.data.message || "등록 실패");
     }
   } catch (err: any) {
-    console.error('등록 중 오류:', err)
-    alert('등록 중 오류가 발생했습니다.')
+    console.error("등록 중 오류:", err);
+    alert("등록 중 오류가 발생했습니다.");
   }
-}
+};
 
 // 검사 리스트 조회
 const loadInspectionList = async (processInt: string) => {
   if (!processInt) {
-    inspectionList.value = []
-    return
+    inspectionList.value = [];
+    return;
   }
   try {
-    const res = await axios.get('/inspections/list', {
-      params: { processInt }
-    })
-    inspectionList.value = res.data
+    const res = await axios.get("/inspections/list", {
+      params: { processInt },
+    });
+    inspectionList.value = res.data;
   } catch (err) {
-    console.error('검사기준 리스트 조회 실패:', err)
-    inspectionList.value = []
+    console.error("검사기준 리스트 조회 실패:", err);
+    inspectionList.value = [];
   }
-}
+};
 
 // 공정명 목록 조회
 onMounted(async () => {
   try {
-    const res = await axios.get('/inspections/processList')
-    processOptions.value = res.data
+    const res = await axios.get("/inspections/processList");
+    processOptions.value = res.data;
   } catch (err) {
-    console.error('공정명 목록 조회 실패:', err)
+    console.error("공정명 목록 조회 실패:", err);
   }
-})
+});
 
 // 공정 선택 시 검사리스트 불러오기
-watch(() => form.value.processInt, (newVal) => {
-  loadInspectionList(newVal)
-})
+watch(
+  () => form.value.processInt,
+  (newVal) => {
+    loadInspectionList(newVal);
+  },
+);
 
 // 현재 선택된 공정의 이름
 const selectedProcessName = computed(() => {
-  const found = processOptions.value.find(p => p.process_int === form.value.processInt)
-  return found ? found.process_name : ''
-})
+  const found = processOptions.value.find(
+    (p) => p.process_int === form.value.processInt,
+  );
+  return found ? found.process_name : "";
+});
 
 // 전체 리스트 출력
-const filteredInspectionList = computed(() => inspectionList.value)
+const filteredInspectionList = computed(() => inspectionList.value);
 </script>
-
 
 <style scoped>
 /* 전체 레이아웃 */
@@ -269,5 +291,4 @@ const filteredInspectionList = computed(() => inspectionList.value)
   background-color: #ffffff;
   font-weight: bold;
 }
-
 </style>

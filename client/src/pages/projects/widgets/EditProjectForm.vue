@@ -1,72 +1,77 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { EmptyProject, Project } from '../types'
-import { SelectOption } from 'vuestic-ui'
-import ProjectStatusBadge from '../components/ProjectStatusBadge.vue'
-import UserAvatar from '../../users/widgets/UserAvatar.vue'
-import { useUsersStore } from '../../../stores/users'
+import { computed, ref, watch } from "vue";
+import { EmptyProject, Project } from "../types";
+import { SelectOption } from "vuestic-ui";
+import ProjectStatusBadge from "../components/ProjectStatusBadge.vue";
+import UserAvatar from "../../users/widgets/UserAvatar.vue";
+import { useUsersStore } from "../../../stores/users";
 
 const props = defineProps<{
-  project: Project | null
-  saveButtonLabel: string
-}>()
+  project: Project | null;
+  saveButtonLabel: string;
+}>();
 
 defineEmits<{
-  (event: 'save', project: Project): void
-  (event: 'close'): void
-}>()
+  (event: "save", project: Project): void;
+  (event: "close"): void;
+}>();
 
 const defaultNewProject: EmptyProject = {
-  project_name: '',
+  project_name: "",
   project_owner: undefined,
   team: [],
   status: undefined,
-}
+};
 
-const newProject = ref({ ...defaultNewProject })
+const newProject = ref({ ...defaultNewProject });
 
 const isFormHasUnsavedChanges = computed(() => {
   return Object.keys(newProject.value).some((key) => {
-    if (key === 'team') {
-      return false
+    if (key === "team") {
+      return false;
     }
 
     return (
-      newProject.value[key as keyof EmptyProject] !== (props.project ?? defaultNewProject)?.[key as keyof EmptyProject]
-    )
-  })
-})
+      newProject.value[key as keyof EmptyProject] !==
+      (props.project ?? defaultNewProject)?.[key as keyof EmptyProject]
+    );
+  });
+});
 
 defineExpose({
   isFormHasUnsavedChanges,
-})
+});
 
-const usersStore = useUsersStore()
+const usersStore = useUsersStore();
 
 watch(
   () => props.project,
   () => {
     if (!props.project) {
-      return
+      return;
     }
 
     newProject.value = {
       ...props.project,
       project_owner: props.project.project_owner,
-    }
+    };
   },
   { immediate: true },
-)
+);
 
-const required = (v: string | SelectOption) => !!v || 'This field is required'
+const required = (v: string | SelectOption) => !!v || "This field is required";
 
-const ownerFiltersSearch = ref('')
-const teamFiltersSearch = ref('')
+const ownerFiltersSearch = ref("");
+const teamFiltersSearch = ref("");
 </script>
 
 <template>
   <VaForm v-slot="{ validate }" class="flex flex-col gap-2">
-    <VaInput v-model="newProject.project_name" label="Project name" :rules="[required]" />
+    <VaInput
+      v-model="newProject.project_name"
+      label="Project name"
+      :rules="[required]"
+    />
     <VaSelect
       v-model="newProject.project_owner"
       v-model:search="ownerFiltersSearch"
@@ -93,15 +98,21 @@ const teamFiltersSearch = ref('')
       track-by="id"
       value-by="id"
       multiple
-      :rules="[(v: any) => ('length' in v && v.length > 0) || 'This field is required']"
+      :rules="[
+        (v: any) => ('length' in v && v.length > 0) || 'This field is required',
+      ]"
       :options="usersStore.items"
       :max-visible-options="$vaBreakpoint.mdUp ? 3 : 1"
     >
       <template #content="{ valueArray }">
         <template v-if="valueArray?.length">
-          <div v-for="(user, index) in valueArray" :key="user.id" class="flex items-center gap-1 mr-2">
+          <div
+            v-for="(user, index) in valueArray"
+            :key="user.id"
+            class="flex items-center gap-1 mr-2"
+          >
             <UserAvatar v-if="user" :user="user" size="18px" />
-            {{ user.fullname }}{{ index < valueArray.length - 1 ? ',' : '' }}
+            {{ user.fullname }}{{ index < valueArray.length - 1 ? "," : "" }}
           </div>
         </template>
       </template>
@@ -124,8 +135,12 @@ const teamFiltersSearch = ref('')
       </template>
     </VaSelect>
     <div class="flex justify-end flex-col-reverse sm:flex-row mt-4 gap-2">
-      <VaButton preset="secondary" color="secondary" @click="$emit('close')">Cancel</VaButton>
-      <VaButton @click="validate() && $emit('save', newProject as Project)">{{ saveButtonLabel }}</VaButton>
+      <VaButton preset="secondary" color="secondary" @click="$emit('close')"
+        >Cancel</VaButton
+      >
+      <VaButton @click="validate() && $emit('save', newProject as Project)">{{
+        saveButtonLabel
+      }}</VaButton>
     </div>
   </VaForm>
 </template>

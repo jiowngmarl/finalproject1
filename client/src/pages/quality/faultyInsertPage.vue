@@ -1,4 +1,4 @@
- <template>
+<template>
   <div class="product-page">
     <div class="product-container">
       <div>
@@ -35,14 +35,15 @@
           />
 
           <!-- 불량상세 자동입력 -->
+          <va-input v-model="form.faultyDetail" label="불량상세" readonly />
+          <va-input v-model="form.faultyQuantity" label="불량수량" readonly />
           <va-input
-            v-model="form.faultyDetail"
-            label="불량상세"
+            v-model="form.occurDate"
+            label="불합판정일자"
+            type="date"
             readonly
           />
-          <va-input v-model="form.faultyQuantity" label="불량수량" readonly />
-          <va-input v-model="form.occurDate" label="불합판정일자" type="date" readonly/>
-          <va-input v-model="form.detail" label="상세설명" readonly/>
+          <va-input v-model="form.detail" label="상세설명" readonly />
 
           <div class="form-buttons">
             <va-button @click="registerProduct" color="primary">등록</va-button>
@@ -55,105 +56,118 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, watch } from 'vue'
-import axios from 'axios'
+import { ref, onMounted, watch } from "vue";
+import axios from "axios";
 
 const form = ref({
-  productCode: '',
-  code: '',
-  processStage: '',
-  faultyType: '',
-  faultyDetail: '',
-  faultyQuantity: '',
-  occurDate: '',
-  detail: '',
-})
+  productCode: "",
+  code: "",
+  processStage: "",
+  faultyType: "",
+  faultyDetail: "",
+  faultyQuantity: "",
+  occurDate: "",
+  detail: "",
+});
 
-const productOptions = ref<{ label: string; value: string }[]>([])
-const workOrderOptions = ref<{ label: string; value: string }[]>([])
+const productOptions = ref<{ label: string; value: string }[]>([]);
+const workOrderOptions = ref<{ label: string; value: string }[]>([]);
 
 const resetForm = () => {
   form.value = {
-    productCode: '',
-    code: '',
-    processStage: '',
-    faultyType: '',
-    faultyDetail: '',
-    faultyQuantity: '',
-    occurDate: '',
-    detail: '',
-  }
-  workOrderOptions.value = [] // 제품명 변경 시 작업지시서도 초기화
-}
+    productCode: "",
+    code: "",
+    processStage: "",
+    faultyType: "",
+    faultyDetail: "",
+    faultyQuantity: "",
+    occurDate: "",
+    detail: "",
+  };
+  workOrderOptions.value = []; // 제품명 변경 시 작업지시서도 초기화
+};
 
 // 제품명 목록 불러오기
 onMounted(async () => {
   try {
-    const res = await axios.get('/faultys/productList')
+    const res = await axios.get("/faultys/productList");
     productOptions.value = res.data.map((item: any) => ({
       label: item.product_name,
       value: item.product_code,
-    }))
+    }));
   } catch (err) {
-    console.error('제품명 목록 조회 실패:', err)
-  }
-})
-
-// ✅ 제품명이 선택되었을 때 작업지시서 목록 가져오기
-watch(() => form.value.productCode, async (newCode) => {
-  if (!newCode) return
-  try {
-    const res = await axios.get('/faultys/faultyOrderNoList', {
-      params: { productCode: newCode }
-    })
-    workOrderOptions.value = res.data.map((item: any) => ({
-      label: item.work_order_no,
-      value: item.work_order_no,
-    }))
-  } catch (err) {
-    console.error('작업지시서 번호 조회 실패:', err)
-  }
-})
-
-watch(() => form.value.code, async (newCode) => {
-  if (!newCode) return;
-
-  try {
-    const res = await axios.get('/faultys/faultyDetail', {
-      params: { workOrderNo: newCode }
-    });
-
-    if (res.data.length > 0) {
-      const detail = res.data[0];
-      form.value.processStage = detail.process_name || '';
-      form.value.faultyQuantity = detail.insp_value_qty || '';
-      form.value.occurDate = detail.created_at || '';
-      form.value.detail = detail.qual_remark || '';
-    }
-  } catch (err) {
-    console.error('불량 상세 정보 조회 실패:', err);
+    console.error("제품명 목록 조회 실패:", err);
   }
 });
 
-const defectTypeOptions = ref<{ label: string; value: string; remark: string }[]>([]);
+// ✅ 제품명이 선택되었을 때 작업지시서 목록 가져오기
+watch(
+  () => form.value.productCode,
+  async (newCode) => {
+    if (!newCode) return;
+    try {
+      const res = await axios.get("/faultys/faultyOrderNoList", {
+        params: { productCode: newCode },
+      });
+      workOrderOptions.value = res.data.map((item: any) => ({
+        label: item.work_order_no,
+        value: item.work_order_no,
+      }));
+    } catch (err) {
+      console.error("작업지시서 번호 조회 실패:", err);
+    }
+  },
+);
+
+watch(
+  () => form.value.code,
+  async (newCode) => {
+    if (!newCode) return;
+
+    try {
+      const res = await axios.get("/faultys/faultyDetail", {
+        params: { workOrderNo: newCode },
+      });
+
+      if (res.data.length > 0) {
+        const detail = res.data[0];
+        form.value.processStage = detail.process_name || "";
+        form.value.faultyQuantity = detail.insp_value_qty || "";
+        form.value.occurDate = detail.created_at || "";
+        form.value.detail = detail.qual_remark || "";
+      }
+    } catch (err) {
+      console.error("불량 상세 정보 조회 실패:", err);
+    }
+  },
+);
+
+const defectTypeOptions = ref<
+  { label: string; value: string; remark: string }[]
+>([]);
 
 onMounted(async () => {
   try {
-    const res = await axios.get('/faultys/defectTypeList');
+    const res = await axios.get("/faultys/defectTypeList");
     defectTypeOptions.value = res.data.map((item: any) => ({
       label: item.defect_type_name,
       value: item.defect_type_name,
-      remark: item.defect_type_remark
+      remark: item.defect_type_remark,
     }));
   } catch (err) {
-    console.error('불량유형 목록 조회 실패:', err);
+    console.error("불량유형 목록 조회 실패:", err);
   }
 });
 
-watch(() => form.value.faultyType, (selectedType) => {
-  const match = defectTypeOptions.value.find(item => item.value === selectedType);
-  form.value.faultyDetail = match ? match.remark : '';
-});
+watch(
+  () => form.value.faultyType,
+  (selectedType) => {
+    const match = defectTypeOptions.value.find(
+      (item) => item.value === selectedType,
+    );
+    form.value.faultyDetail = match ? match.remark : "";
+  },
+);
 
 const registerProduct = async () => {
   try {
@@ -168,20 +182,19 @@ const registerProduct = async () => {
       qual_remark: form.value.detail,
     };
 
-    const res = await axios.post('/faultys/register', payload);
+    const res = await axios.post("/faultys/register", payload);
 
     if (res.status === 200) {
-      alert('불량품검사 등록 성공');
+      alert("불량품검사 등록 성공");
       resetForm();
     } else {
-      alert('등록 실패');
+      alert("등록 실패");
     }
   } catch (err) {
-    console.error('등록 오류:', err);
-    alert('등록 중 오류가 발생했습니다.');
+    console.error("등록 오류:", err);
+    alert("등록 중 오류가 발생했습니다.");
   }
 };
-
 </script>
 
 <style scoped>
@@ -228,5 +241,4 @@ const registerProduct = async () => {
   justify-content: center; /* 가운데 정렬 */
   margin-bottom: 0.5rem;
 }
-
 </style>

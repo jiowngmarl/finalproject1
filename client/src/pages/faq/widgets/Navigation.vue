@@ -4,7 +4,11 @@
       <div v-for="section in navSections" :key="section" class="mb-6 md:mb-0">
         <h3 class="h5 mb-4">{{ section }}</h3>
         <ul class="leading-5">
-          <li v-for="item in navigation[section]" :key="`${section}-${item.name}`" class="mb-4">
+          <li
+            v-for="item in navigation[section]"
+            :key="`${section}-${item.name}`"
+            class="mb-4"
+          >
             <a class="va-link" href="#">{{ item.name }}</a>
           </li>
         </ul>
@@ -14,10 +18,10 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import navigation from '../data/navigationLinks.json'
-account
+import { computed } from "vue";
+import navigation from "../data/navigationLinks.json";
+account;
 const navSections = computed(() => {
-  return Object.keys(navigation)
-})
+  return Object.keys(navigation);
+});
 </script>

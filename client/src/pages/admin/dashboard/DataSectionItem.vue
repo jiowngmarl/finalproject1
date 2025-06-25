@@ -31,20 +31,20 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
-import { VaCard } from 'vuestic-ui'
+import { computed } from "vue";
+import { VaCard } from "vuestic-ui";
 
 const props = defineProps<{
-  title: string
-  value: string | number
-  changeText: string
-  up: boolean
-  iconBackground: string
-  iconColor: string
-}>()
+  title: string;
+  value: string | number;
+  changeText: string;
+  up: boolean;
+  iconBackground: string;
+  iconColor: string;
+}>();
 
 const changeClass = computed(() => ({
-  'text-success': props.up,
-  'text-red-600': !props.up,
-}))
+  "text-success": props.up,
+  "text-red-600": !props.up,
+}));
 </script>

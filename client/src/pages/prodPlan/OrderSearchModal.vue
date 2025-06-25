@@ -9,7 +9,7 @@
 
       <!-- 검색 -->
       <div class="p-4 border-b">
-        <input 
+        <input
           v-model="searchTerm"
           @input="searchOrders"
           placeholder="주문번호, 제품명으로 검색"
@@ -46,7 +46,7 @@
               <td class="border p-2">{{ formatDate(order.order_date) }}</td>
               <td class="border p-2">{{ formatDate(order.delivery_date) }}</td>
               <td class="border p-2 text-center">
-                <button 
+                <button
                   @click="$emit('select', order)"
                   class="px-4 py-2 bg-blue-500 text-white text-xs rounded"
                 >
@@ -62,52 +62,52 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { ref, onMounted } from "vue";
+import axios from "axios";
 
 // Emits
-defineEmits(['select', 'close'])
+defineEmits(["select", "close"]);
 
 // 반응형 데이터
-const searchTerm = ref('')
-const orderList = ref([])
-const loading = ref(false)
+const searchTerm = ref("");
+const orderList = ref([]);
+const loading = ref(false);
 
 // 메서드들
 const searchOrders = async () => {
-  loading.value = true
-  
+  loading.value = true;
+
   try {
-    const response = await axios.get('/prodPlan/orders/search', {
-      params: { q: searchTerm.value }
-    })
+    const response = await axios.get("/prodPlan/orders/search", {
+      params: { q: searchTerm.value },
+    });
 
     if (response.data) {
-      orderList.value = response.data
+      orderList.value = response.data;
     } else {
-      orderList.value = []
+      orderList.value = [];
     }
   } catch (error) {
-    orderList.value = []
+    orderList.value = [];
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // 유틸리티 함수들
 const formatDate = (dateString) => {
-  if (!dateString) return '-'
-  const date = new Date(dateString)
-  return date.toLocaleDateString('ko-KR')
-}
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("ko-KR");
+};
 
 const formatNumber = (number) => {
-  if (!number) return '0'
-  return number.toLocaleString()
-}
+  if (!number) return "0";
+  return number.toLocaleString();
+};
 
 // 컴포넌트 마운트 시 초기 검색 (전체 목록)
 onMounted(() => {
-  searchOrders()
-})
+  searchOrders();
+});
 </script>

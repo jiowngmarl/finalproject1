@@ -408,7 +408,6 @@ const startWork = async () => {
     if (selectedSeq === 1) {
       await axios.put(`/workResultStatus/${selectedItem.value.result_id}`);
     }
-
     await axios.put(`/prodResult/${selectedItem.value.result_detail}`, {
       pass_qty: selectedItem.value.pass_qty ?? 0,
       manager_id: selectedItem.value.manager_id ?? "",

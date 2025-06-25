@@ -1,10 +1,10 @@
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import { resolve, dirname } from 'node:path'
-import { fileURLToPath } from 'url'
-import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
-import { vuestic } from '@vuestic/compiler/vite'
-import vueDevTools from 'vite-plugin-vue-devtools'
+import { defineConfig } from "vite";
+import vue from "@vitejs/plugin-vue";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "url";
+import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
+import { vuestic } from "@vuestic/compiler/vite";
+import vueDevTools from "vite-plugin-vue-devtools";
 
 // ✅ 중복 프록시 설정 경로 배열
 const proxyPaths = [
@@ -65,12 +65,12 @@ const createProxy = (paths: string[]) =>
     paths.map((path) => [
       `/${path}`,
       {
-        target: 'http://localhost:3000',
+        target: "http://localhost:3000",
         changeOrigin: true,
-        rewrite: (p: string) => p.replace(new RegExp(`^/${path}`), `/${path}`)
-      }
-    ])
-  )
+        rewrite: (p: string) => p.replace(new RegExp(`^/${path}`), `/${path}`),
+      },
+    ]),
+  );
 
 export default defineConfig({
   build: {
@@ -78,21 +78,24 @@ export default defineConfig({
     //outDir: "../server/public",
   },
   server: {
-    proxy: createProxy(proxyPaths)
+    proxy: createProxy(proxyPaths),
   },
   resolve: {
     alias: {
-      '@': resolve(dirname(fileURLToPath(import.meta.url)), './src'),
+      "@": resolve(dirname(fileURLToPath(import.meta.url)), "./src"),
     },
   },
   plugins: [
     vuestic({
       devtools: true,
-      cssLayers: true
+      cssLayers: true,
     }),
     vue(),
     VueI18nPlugin({
-      include: resolve(dirname(fileURLToPath(import.meta.url)), './src/i18n/locales/**')
+      include: resolve(
+        dirname(fileURLToPath(import.meta.url)),
+        "./src/i18n/locales/**",
+      ),
     }),
     vueDevTools()
   ]

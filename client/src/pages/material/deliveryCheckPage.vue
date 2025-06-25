@@ -5,11 +5,16 @@
       <h3 class="section-title">출고 조회</h3>
       <div class="search-form">
         <va-input v-model="filters.outbound_id" label="출고코드" />
-        <va-date-input v-model="filters.outbound_date" label="출고일자" :manual-input="false" :clearable="true" />
+        <va-date-input
+          v-model="filters.outbound_date"
+          label="출고일자"
+          :manual-input="false"
+          :clearable="true"
+        />
         <va-input v-model="filters.material_code" label="자재코드" />
         <va-input v-model="filters.material_name" label="자재명" />
         <va-input v-model="filters.material_cls" label="분류" />
-        <va-input v-model="filters.lot_number" label="LOT번호"/>
+        <va-input v-model="filters.lot_number" label="LOT번호" />
 
         <div class="button-group">
           <va-button @click="searchOrders">조회</va-button>
@@ -28,7 +33,6 @@
           :per-page="perPage"
           :current-page.sync="page"
         >
-
           <template #cell(outbound_date)="{ row }">
             {{ formatDateForView(row.source.outbound_date) }}
           </template>
@@ -45,77 +49,74 @@
 </template>
 
 <script lang="ts" setup>
-import axios from 'axios'
-import { ref, onMounted } from 'vue'
+import axios from "axios";
+import { ref, onMounted } from "vue";
 
 interface Outbound {
-  outbound_id: string
-  material_code: string
-  material_name: string
-  material_unit: number
-  material_cls: string
-  outbound_date: string
-  outbound_qty: number
-  lot_number: string
+  outbound_id: string;
+  material_code: string;
+  material_name: string;
+  material_unit: number;
+  material_cls: string;
+  outbound_date: string;
+  outbound_qty: number;
+  lot_number: string;
 }
 
 const filters = ref({
-  outbound_id: '',
-  material_code: '',
-  material_name: '',
-  material_unit: '',
-  material_cls: '',
+  outbound_id: "",
+  material_code: "",
+  material_name: "",
+  material_unit: "",
+  material_cls: "",
   outbound_date: null as Date | null,
-  outbound_qty: '',
-  lot_number: '',
-})
+  outbound_qty: "",
+  lot_number: "",
+});
 
-const outboundList = ref<Outbound[]>([])
-const allOutbounds = ref<Outbound[]>([])
-const perPage = 5
+const outboundList = ref<Outbound[]>([]);
+const allOutbounds = ref<Outbound[]>([]);
+const perPage = 5;
 
-const page = ref(1)
-
+const page = ref(1);
 
 const formatDateForView = (date: Date | string | null | undefined): string => {
-  if (!date) return ''
-  const d = typeof date === 'string' ? new Date(date) : date
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
-}
+  if (!date) return "";
+  const d = typeof date === "string" ? new Date(date) : date;
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+};
 
 const columns = [
-  { key: 'outbound_id', label: '발주코드' },
-  { key: 'material_code', label: '자재코드' },
-  { key: 'material_name', label: '자재명' },
-  { key: 'material_unit', label: '단위' },
-  { key: 'material_cls', label: '분류' },
-  { key: 'outbound_date', label: '출고 일자' },
-  { key: 'outbound_qty', label: '출고 수량' },
-  { key: 'lot_number', label: 'LOT 번호' }
-]
+  { key: "outbound_id", label: "발주코드" },
+  { key: "material_code", label: "자재코드" },
+  { key: "material_name", label: "자재명" },
+  { key: "material_unit", label: "단위" },
+  { key: "material_cls", label: "분류" },
+  { key: "outbound_date", label: "출고 일자" },
+  { key: "outbound_qty", label: "출고 수량" },
+  { key: "lot_number", label: "LOT 번호" },
+];
 
 const fetchPurchase = async () => {
   try {
-    const res = await axios.get('/deliveryCheck')
-    allOutbounds.value = Array.isArray(res.data) ? res.data : []
-    outboundList.value = [...allOutbounds.value]
-    console.log("allOrders: ", res.data)
-    console.log("order: ", outboundList.value)
-    
+    const res = await axios.get("/deliveryCheck");
+    allOutbounds.value = Array.isArray(res.data) ? res.data : [];
+    outboundList.value = [...allOutbounds.value];
+    console.log("allOrders: ", res.data);
+    console.log("order: ", outboundList.value);
   } catch (err) {
-    console.error('계획 조회 실패', err)
-    allOutbounds.value = []
+    console.error("계획 조회 실패", err);
+    allOutbounds.value = [];
   }
-}
+};
 
 function isSameDate(d1: Date, d2: Date): boolean {
   return (
     d1.getFullYear() === d2.getFullYear() &&
     d1.getMonth() === d2.getMonth() &&
     d1.getDate() === d2.getDate()
-  )
+  );
 }
-
 
 function searchOrders() {
   const {
@@ -125,17 +126,23 @@ function searchOrders() {
     outbound_date,
     material_cls,
     lot_number,
-  } = filters.value
+  } = filters.value;
 
   outboundList.value = allOutbounds.value.filter((outbound) => {
-    const matchesOutboundId = !outbound_id || outbound.outbound_id.includes(outbound_id)
-    const matchesMaterialId = !material_code || outbound.material_code.includes(material_code)
-    const matchesMaterialName = !material_name || outbound.material_name.includes(material_name)
-    const matchesMaterialCls = !material_cls || outbound.material_cls.includes(material_cls)
-    const matchesMaterialLotNumber = !lot_number || outbound.lot_number.includes(lot_number)
+    const matchesOutboundId =
+      !outbound_id || outbound.outbound_id.includes(outbound_id);
+    const matchesMaterialId =
+      !material_code || outbound.material_code.includes(material_code);
+    const matchesMaterialName =
+      !material_name || outbound.material_name.includes(material_name);
+    const matchesMaterialCls =
+      !material_cls || outbound.material_cls.includes(material_cls);
+    const matchesMaterialLotNumber =
+      !lot_number || outbound.lot_number.includes(lot_number);
 
     const matchesOutboundDate =
-      !outbound_date || isSameDate(new Date(outbound.outbound_date), new Date(outbound_date))
+      !outbound_date ||
+      isSameDate(new Date(outbound.outbound_date), new Date(outbound_date));
 
     return (
       matchesOutboundId &&
@@ -144,30 +151,28 @@ function searchOrders() {
       matchesMaterialCls &&
       matchesOutboundDate &&
       matchesMaterialLotNumber
-    )
-  })
-  page.value = 1
+    );
+  });
+  page.value = 1;
 }
 
 function resetFilters() {
   filters.value = {
-    outbound_id: '',
-    material_code: '',
-    material_name: '',
-    material_unit: '',
-    material_cls: '',
+    outbound_id: "",
+    material_code: "",
+    material_name: "",
+    material_unit: "",
+    material_cls: "",
     outbound_date: null,
-    outbound_qty: '',
-    lot_number: '',
-  }
+    outbound_qty: "",
+    lot_number: "",
+  };
 }
 
 onMounted(() => {
-  fetchPurchase()
-})
+  fetchPurchase();
+});
 </script>
-
-
 
 <style scoped>
 .order-search-page {
