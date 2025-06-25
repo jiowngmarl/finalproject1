@@ -28,6 +28,7 @@ const employee = require('./sqls/employee.js');
 const equipmentHistory = require('./sqls/equipmentHistory.js');
 const faulty = require('./sqls/faultyInsert.js');
 const faultyDisuse = require('./sqls/faultyDisuse.js');
+const qualityInsertList = require('./sqls/qualityInsertList.js');
 
 
 
@@ -62,6 +63,7 @@ const faultyDisuse = require('./sqls/faultyDisuse.js');
      ...employee,
      ...equipmentHistory,
      ...faulty,
-     ...faultyDisuse
+     ...faultyDisuse,
+     ...qualityInsertList
  }
 

@@ -107,6 +107,8 @@ const faultyRouter = require('./routers/faultyInsertRouter.js');
 
 const faultyDisuseRouter = require('./routers/faultyDisuseRouter.js');
 
+const qualityInsertListRouter = require('./routers/qualityInsertListRouter.js');
+
  // 기본 라우팅
 app.get('/', (req, res)=>{
   res.send('Welcome!!...');
@@ -162,6 +164,7 @@ app.use('/defects', defectRouter);
 app.use('/qualitys', qualityRouter);
 app.use('/faultys', faultyRouter);
 app.use('/faultyDisuses', faultyDisuseRouter);
+app.use('/qualityInsertLists', qualityInsertListRouter);
 
 app.get("/", function (req, res, next) {
   res.sendFile(path.join(__dirname, "./public", "index.html"));

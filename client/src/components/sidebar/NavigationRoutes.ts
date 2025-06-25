@@ -55,10 +55,6 @@ export default {
           displayName: 'menu.제품검사항목 관리',
         },
         {
-          name: 'MaterialInspectionManagement',
-          displayName: 'menu.자재검사항목 관리',
-        },
-        {
           name: 'defectManagement',
           displayName: 'menu.불량유형 관리',
         },
@@ -224,6 +220,10 @@ export default {
         {
           name: 'quality-management',
           displayName: 'menu.제품품질검사 등록',
+        },
+                {
+          name: 'quality-insertList',
+          displayName: 'menu.제품품질검사 조회',
         },
         {
           name: 'faulty-management',
