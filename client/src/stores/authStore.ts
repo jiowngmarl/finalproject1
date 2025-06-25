@@ -363,10 +363,10 @@ export const useAuthStore = defineStore("auth", () => {
   // 토큰 검증
   const verifyToken = async (tokenToVerify?: string): Promise<boolean> => {
     try {
-      const targetToken = tokenToVerify || token.value;
-      if (!targetToken) return false;
-
-      const response = await axios.get("http://localhost:3000/auth/verify", {
+      const targetToken = tokenToVerify || token.value
+      if (!targetToken) return false
+      
+      const response = await axios.get('/auth/verify', {
         headers: { Authorization: `Bearer ${targetToken}` },
         timeout: 10000,
       });
@@ -386,40 +386,34 @@ export const useAuthStore = defineStore("auth", () => {
 
   // 로그인 (개선된 버전)
   const login = async (employee_id: string, password: string) => {
-    const { init: showToast } = useToast();
-
+    const { init: showToast } = useToast()
+    
     try {
-      isLoading.value = true;
-
-      console.log("로그인 요청:", { employee_id });
-
-      const response = await axios.post(
-        "http://localhost:3000/auth/login",
-        {
-          employee_id: employee_id.toString().trim(),
-          password: password.toString().trim(),
-        },
-        {
-          timeout: 15000,
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-        },
-      );
-
-      console.log("서버 응답:", response.data);
-
+      isLoading.value = true
+      
+      console.log('로그인 요청:', { employee_id })
+      
+      const response = await axios.post('/auth/login', {
+        employee_id: employee_id.toString().trim(),
+        password: password.toString().trim()
+      }, {
+        timeout: 15000,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      })
+      
+      console.log('서버 응답:', response.data)
+      
       if (response.data.success) {
-        const { user: userData, token: userToken } = response.data;
-
+        const { user: userData, token: userToken } = response.data
+        
         // 인증 데이터 저장
-        saveAuthData(userData, userToken);
-
+        saveAuthData(userData, userToken)
+        
         // 관리자/부서별 권한 메시지 표시
-        let welcomeMessage = `${
-          userData.employee_name || userData.employee_id
-        }님 환영합니다!`;
+        let welcomeMessage = `${userData.employee_name || userData.employee_id}님 환영합니다!`
 
         showToast({
           message: welcomeMessage,
@@ -495,15 +489,11 @@ export const useAuthStore = defineStore("auth", () => {
       // 서버에 로그아웃 요청
       if (token.value) {
         try {
-          await axios.post(
-            "http://localhost:3000/auth/logout",
-            {},
-            {
-              headers: { Authorization: `Bearer ${token.value}` },
-              timeout: 5000,
-            },
-          );
-          console.log("서버 로그아웃 요청 완료");
+          await axios.post('/auth/logout', {}, {
+            headers: { Authorization: `Bearer ${token.value}` },
+            timeout: 5000
+          })
+          console.log('서버 로그아웃 요청 완료')
         } catch (err) {
           console.warn("서버 로그아웃 요청 실패:", err);
         }
@@ -740,4 +730,4 @@ export const useAuthStore = defineStore("auth", () => {
   };
 });
 
-export default useAuthStore;
+export default useAuthStore

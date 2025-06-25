@@ -160,9 +160,13 @@
                 {{ workOrder.work_order_no }}
               </td>
               <td class="border border-gray-200 px-3 py-2">
+<<<<<<< HEAD
                 <span class="text-blue-700 font-medium">{{
                   workOrder.product_summary
                 }}</span>
+=======
+                <span class="text font-medium">{{ workOrder.product_summary }}</span>
+>>>>>>> 041fb8a9dae56ed499dcd42f11dcd0ac64d0f58c
               </td>
               <td class="border border-gray-200 px-3 py-2 text-center">
                 <span class="font-semibold">{{

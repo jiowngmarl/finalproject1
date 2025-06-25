@@ -11,7 +11,7 @@ const searchProducts = `SELECT p.product_code, p.product_name, p.product_unit, p
                      OR p.product_code LIKE CONCAT('%', ?, '%'))
         ORDER BY p.product_name;`;
 
-// 3. 작업지시서 검색 (모달) 
+// 3. 작업지시서 검색 (모달) - 외 X건 제거하고 product_stand 추가
 const searchWorkOrders = `SELECT 
             wom.work_order_no, 
             wom.plan_id, 
@@ -21,18 +21,24 @@ const searchWorkOrders = `SELECT
             wom.order_end_dt,
             wom.order_remark,
             e.employee_name as writer_name,
-            CONCAT(
-                (SELECT p2.product_name 
-                 FROM work_order_detail wod2 
-                 LEFT JOIN product p2 ON wod2.product_code = p2.product_code 
-                 WHERE wod2.work_order_no = wom.work_order_no 
-                 ORDER BY wod2.work_order_priority, wod2.work_order_detail_id
-                 LIMIT 1),
-                CASE 
-                    WHEN (SELECT COUNT(*) FROM work_order_detail wod3 WHERE wod3.work_order_no = wom.work_order_no) > 1 
-                    THEN CONCAT(' 외 ', (SELECT COUNT(*) - 1 FROM work_order_detail wod4 WHERE wod4.work_order_no = wom.work_order_no), '건')
-                    ELSE ''
-                END
+            COALESCE(
+                (SELECT GROUP_CONCAT(
+                    CONCAT(
+                        p2.product_name,
+                        CASE 
+                            WHEN COALESCE(p2.product_stand, '') != '' 
+                            THEN CONCAT(' ', p2.product_stand) 
+                            ELSE '' 
+                        END,
+                        '(', wod2.work_order_qty, ')'
+                    )
+                    ORDER BY wod2.work_order_priority, wod2.work_order_detail_id
+                    SEPARATOR ', '
+                )
+                FROM work_order_detail wod2 
+                LEFT JOIN product p2 ON wod2.product_code = p2.product_code 
+                WHERE wod2.work_order_no = wom.work_order_no),
+                '제품 정보 없음'
             ) as product_summary
         FROM work_order_master wom
             LEFT JOIN employees e ON wom.writer_id = e.employee_id
@@ -43,7 +49,7 @@ const searchWorkOrders = `SELECT
         GROUP BY wom.work_order_no
         ORDER BY wom.write_date DESC, wom.work_order_no DESC;`;
 
-// 4. 계획 검색 (모달) - 제품정보 형식 변경
+// 4. 계획 검색 (모달) - 외 X건 제거하고 product_stand 추가
 const searchPlans = `SELECT 
     pm.plan_id,
     pm.employee_name,
@@ -54,9 +60,17 @@ const searchPlans = `SELECT
     pm.employee_name as writer_name,
     COALESCE(
         (SELECT GROUP_CONCAT(
-            CONCAT(p2.product_name, '(', pd2.plan_qty, ')')
+            CONCAT(
+                p2.product_name,
+                CASE 
+                    WHEN COALESCE(p2.product_stand, '') != '' 
+                    THEN CONCAT(' ', p2.product_stand) 
+                    ELSE '' 
+                END,
+                '(', pd2.plan_qty, ')'
+            )
             ORDER BY pd2.plan_qty DESC
-            SEPARATOR ' '
+            SEPARATOR ', '
         )
          FROM production_plan_detail pd2 
          LEFT JOIN product p2 ON pd2.product_code = p2.product_code 
@@ -73,7 +87,13 @@ WHERE pm.plan_id NOT IN (
         FROM work_order_master wom 
         WHERE wom.plan_id IS NOT NULL AND wom.plan_id != ''
     )
-    AND (? = '' OR pm.plan_id LIKE CONCAT('%', ?, '%'))
+    AND (? = '' OR pm.plan_id LIKE CONCAT('%', ?, '%')
+               OR EXISTS (
+                   SELECT 1 FROM production_plan_detail pd 
+                   LEFT JOIN product p ON pd.product_code = p.product_code 
+                   WHERE pd.plan_id = pm.plan_id 
+                   AND p.product_name LIKE CONCAT('%', ?, '%')
+               ))
 ORDER BY pm.plan_end_dt ASC;`;
 
 // 5. 계획 정보 불러오기 (계획 시작일, 종료일 추가)
@@ -180,7 +200,15 @@ const getWorkOrderListPage = `SELECT
     e.employee_name as writer_name,
     COALESCE(
         (SELECT GROUP_CONCAT(
-            CONCAT(p2.product_name, '(', wod2.work_order_qty, ')')
+            CONCAT(
+                p2.product_name,
+                CASE 
+                    WHEN COALESCE(p2.product_stand, '') != '' 
+                    THEN CONCAT(' ', p2.product_stand) 
+                    ELSE '' 
+                END,
+                '(', wod2.work_order_qty, ')'
+            )
             ORDER BY wod2.work_order_priority, wod2.work_order_detail_id
             SEPARATOR ', '
         )

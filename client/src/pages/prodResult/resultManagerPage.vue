@@ -144,16 +144,6 @@
           label="작업 종료 사유"
           placeholder="종료 사유 선택"
         />
-        <va-input
-          v-model="selectedItem.product_qual_qty"
-          label="합격 수량"
-          readonly
-        />
-        <va-input
-          v-model="selectedItem.process_defective_qty"
-          label="불량품 수량"
-          readonly
-        />
       </div>
       <div class="side-buttons">
         <!-- 작업시작 -->
@@ -372,39 +362,37 @@ const notifyPackagingAlert = () => {
 };
 
 const startWork = async () => {
-  const status = selectedItem.value.code_label;
+  const eqStatus = selectedItem.value.code_label; // 설비 상태
 
   const selectedSeq =
     Number(selectedItem.value.process_code.match(/\d+$/)?.[0]) || 0;
 
+  // ✅ 이전 공정 중 완료되지 않은 공정이 있다면 작업 시작 불가
   const unfinishedPrev = workList.value.find((item) => {
     const currentSeq = Number(item.process_code.match(/\d+$/)?.[0]) || 0;
     return (
       item.result_id === selectedItem.value.result_id &&
       currentSeq < selectedSeq &&
-      (item.product_qual_qty === null ||
-        item.product_qual_qty === "" ||
-        item.process_defective_qty === null ||
-        item.process_defective_qty === "")
+      item.detail_code_label !== "완료" // 이전 공정이 완료 상태가 아님
     );
   });
 
   if (unfinishedPrev) {
     alert(
-      `⚠️ ${unfinishedPrev.process_name} 공정의 품질검사가 완료되지 않았습니다.\n완료 후 작업을 시작해주세요.`,
+      `⚠️ 이전 공정 "${unfinishedPrev.process_name}"의 진행상태가 '${unfinishedPrev.detail_code_label}'입니다.\n완료 후 다음 공정을 시작해주세요.`,
     );
     return;
   }
 
   // ✅ 설비 상태 검사
-  if (status === "가동 중") {
+  if (eqStatus === "가동 중") {
     alert(
       "⚠️ 현재 설비는 가동중입니다.\n가동이 종료되고 점검 및 청소가 완료된 후 사용하십시오.",
     );
     return;
   }
 
-  if (status === "정지") {
+  if (eqStatus === "정지") {
     alert(
       "⚠️ 현재 설비는 정지 상태입니다.\n점검 및 청소가 모두 완료되기를 기다려주세요.",
     );
@@ -417,7 +405,6 @@ const startWork = async () => {
   selectedItem.value.work_start_date = now.toISOString().split("T")[0];
 
   try {
-    // ✅ 서버에 설비 상태 업데이트 요청
     if (selectedSeq === 1) {
       await axios.put(`/workResultStatus/${selectedItem.value.result_id}`);
     }
@@ -446,7 +433,8 @@ const endWork = async () => {
   const reasonCode =
     typeof selectedItem.value.end_reason_code === "string"
       ? selectedItem.value.end_reason_code
-      : (selectedItem.value.end_reason_code as { value: string })?.value ?? "";
+      : ((selectedItem.value.end_reason_code as { value: string })?.value ??
+        "");
 
   if (reasonCode.trim() === "") {
     alert("⚠️ 종료 사유(비고)를 작성해주세요.");

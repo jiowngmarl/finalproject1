@@ -4,9 +4,12 @@
     <div class="mb-3">
       <h1 class="text-2xl font-bold text-gray-800">
         생산계획 관리
+<<<<<<< HEAD
         <span class="text-sm font-normal text-gray-500 ml-2">
           ({{ authStore.user?.employee_name || "사용자" }})
         </span>
+=======
+>>>>>>> 041fb8a9dae56ed499dcd42f11dcd0ac64d0f58c
       </h1>
     </div>
 

@@ -83,9 +83,7 @@
         >
           삭제
         </va-button>
-        <va-button preset="secondary" icon="download" @click="exportExcel">
-          엑셀
-        </va-button>
+        
       </div>
 
       <!-- 권한 없는 사용자를 위한 메시지 -->
@@ -447,15 +445,9 @@ const employmentStatusOptions = ref([
 const filteredEmployees = computed(() => {
   return employees.value.filter((employee) => {
     // 검색어 필터
-    const matchesSearch =
-      !searchText.value ||
-      employee.employee_id
-        .toLowerCase()
-        .includes(searchText.value.toLowerCase()) ||
-      employee.employee_name
-        .toLowerCase()
-        .includes(searchText.value.toLowerCase());
-
+    const matchesSearch = !searchText.value || 
+      String(employee.employee_id).toLowerCase().includes(searchText.value.toLowerCase()) ||
+      employee.employee_name.toLowerCase().includes(searchText.value.toLowerCase())
     // 드롭다운 필터
     const matchesFilters =
       (!filters.value.employeeId ||
@@ -493,10 +485,10 @@ onMounted(async () => {
 // API 함수들
 async function fetchEmployees() {
   try {
-    loading.value = true;
-    const response = await axios.get("http://localhost:3000/employee");
-    console.log("사원 데이터:", response.data);
-    employees.value = response.data;
+    loading.value = true
+    const response = await axios.get('/employee')
+    console.log('사원 데이터:', response.data)
+    employees.value = response.data
   } catch (error) {
     console.error("사원 목록 로드 실패:", error);
     // Mock 데이터
@@ -662,15 +654,12 @@ async function saveEmployee() {
 
     if (selectedEmployee.value) {
       // 수정
-      await axios.put(
-        `http://localhost:3000/employee/${selectedEmployee.value.employee_id}`,
-        employeeData,
-      );
-      alert("사원 정보가 수정되었습니다.");
+      await axios.put(`/employee/${selectedEmployee.value.employee_id}`, employeeData)
+      alert('사원 정보가 수정되었습니다.')
     } else {
       // 신규 등록
-      await axios.post("http://localhost:3000/employee", employeeData);
-      alert("사원이 등록되었습니다.");
+      await axios.post('/employee', employeeData)
+      alert('사원이 등록되었습니다.')
     }
 
     // 목록 새로고침
@@ -703,15 +692,12 @@ async function deleteSelected() {
     console.log("다중 삭제 요청 시작");
 
     // 서버의 다중 삭제 API 호출
-    const response = await axios.post(
-      "http://localhost:3000/employee/delete-multiple",
-      {
-        ids: selectedIds.value,
-      },
-    );
-
-    console.log("삭제 응답:", response.data);
-
+    const response = await axios.post('/employee/delete-multiple', {
+      ids: selectedIds.value
+    });
+    
+    console.log('삭제 응답:', response.data);
+    
     if (response.data.success) {
       alert(`${response.data.deletedCount}명의 사원이 삭제되었습니다.`);
     } else {
@@ -854,6 +840,7 @@ watch(itemsPerPage, () => {
   display: flex;
   gap: 8px;
   margin-bottom: 16px;
+  justify-content: right;
 }
 
 /* 테이블 */
