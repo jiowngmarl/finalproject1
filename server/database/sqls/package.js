@@ -1,397 +1,505 @@
-// database/sqls/package.js (실제 테이블 구조 기반 단순화 버전)
+// database/sqls/package.js - employees 테이블 연동 추가
 module.exports = {
   
-  // ========== 기본 작업 관련 쿼리 (실제 테이블 구조 기반) ==========
+  // ========== 라인실적등록.txt 워크플로우 기반 쿼리 (employees 테이블 연동) ==========
   
-  // 작업 목록 조회 (단순화된 버전)
-  selectWorkList: `
+  // 테이블 관계:
+  // work_order_master.work_order_no = work_result.work_order_no (1:1)
+  // work_result.result_id = work_result_detail.result_id (1:N)
+  // work_result_detail.manager_id = employees.employee_id (N:1)
+
+  // 2-1) 해당 제품코드의 공정흐름도 정보 가져오기
+  selectProcessFlowByProduct: `
     SELECT 
-      work_id,
-      work_order_no,
-      order_detail_id,
-      line_id,
-      work_line,
-      work_step,
-      step_name,
-      step_status,
-      input_qty,
-      output_qty,
-      eq_code,
-      start_time,
-      end_time,
-      employee_id,
-      employee_name,
-      product_name,
-      reg_date,
-      upd_date,
-      
-      -- 기본 제품명 설정
-      COALESCE(product_name, step_name, '제품명없음') as final_product_name,
-      
-      -- 포장타입 결정 (단순화)
-      CASE 
-        WHEN step_name LIKE '%외포장%' OR step_name LIKE '%2차%' THEN 'OUTER'
-        ELSE 'INNER'
-      END as package_type,
-      
-      -- 라인명 추출 (단순화)
-      COALESCE(work_line, line_id, '라인정보없음') as line_name,
-      
-      -- 진행률 계산
-      CASE 
-        WHEN input_qty > 0 THEN ROUND((output_qty / input_qty * 100), 1)
-        ELSE 0
-      END AS progress_rate,
-      
-      -- 기본 수량 정보
-      COALESCE(input_qty, 1000) as order_qty,
-      COALESCE(input_qty, 1000) as target_qty,
-      COALESCE(employee_name, '작업자') as emp_name,
-      0 as defect_qty,
-      
-      -- 호환성을 위한 별칭
-      work_id as work_no
-      
-    FROM tablets.package_work
-    WHERE work_id IS NOT NULL
-    ORDER BY reg_date DESC
+      p.process_group_code as 공정그룹코드,
+      p.process_seq as 순서,
+      p.process_code as 공정코드,
+      p.process_name as 공정명,
+      pg.product_code as 제품코드
+    FROM tablets.process p
+    JOIN tablets.process_group pg ON p.process_group_code = pg.process_group_code
+    WHERE pg.product_code = ?
+    AND p.process_name LIKE '%포장%'
+    ORDER BY p.process_seq
   `,
 
-  // 작업 상세 조회 (단순화)
-  selectWorkDetail: `
-    SELECT 
-      *,
-      COALESCE(product_name, step_name, '제품명없음') as final_product_name,
-      COALESCE(employee_name, '작업자') as emp_name,
-      COALESCE(input_qty, 1000) as order_qty,
-      COALESCE(work_line, line_id, '라인정보없음') as line_name,
-      work_id as work_no
-    FROM tablets.package_work
-    WHERE work_id = ?
-  `,
-
-  // 작업 등록 (기본)
-  insertWork: `
-    INSERT INTO tablets.package_work (
-      work_order_no, order_detail_id, line_id, work_line, work_step, step_name, 
-      step_status, input_qty, output_qty, eq_code, start_time, end_time,
-      employee_id, employee_name, reg_date, upd_date, product_name
-    ) VALUES (?, ?, ?, ?, ?, ?, 'READY', ?, 0, ?, NULL, NULL, ?, ?, NOW(), NOW(), ?)
-  `,
-
-  // 작업 업데이트
-  updateWork: `
-    UPDATE tablets.package_work 
-    SET 
-      step_status = ?,
-      output_qty = ?,
-      start_time = ?,
-      end_time = ?,
-      upd_date = NOW()
-    WHERE work_id = ?
-  `,
-
-  // 작업 완료
-  completeWork: `
-    UPDATE tablets.package_work 
-    SET 
-      step_status = '완료',
-      output_qty = ?,
-      end_time = NOW(),
-      upd_date = NOW()
-    WHERE work_id = ?
-  `,
-
-  // 작업 존재 확인
-  checkWorkExists: `
-    SELECT COUNT(*) as count 
-    FROM tablets.package_work 
-    WHERE work_id = ?
-  `,
-
-  // ========== 필터링 관련 쿼리 ==========
-
-  // 포장타입별 작업 조회 (단순화)
-  selectWorksByPackageType: `
-    SELECT 
-      work_id,
-      work_order_no,
-      line_id,
-      step_name,
-      step_status,
-      input_qty,
-      output_qty,
-      employee_name,
-      product_name,
-      reg_date,
-      
-      COALESCE(product_name, step_name, '제품명없음') as final_product_name,
-      
-      CASE 
-        WHEN ? = 'OUTER' AND (step_name LIKE '%외포장%' OR step_name LIKE '%2차%') THEN 'OUTER'
-        WHEN ? = 'INNER' AND (step_name NOT LIKE '%외포장%' AND step_name NOT LIKE '%2차%') THEN 'INNER'
-        ELSE ?
-      END as package_type,
-      
-      COALESCE(work_line, line_id, '라인정보없음') as line_name,
-      
-      CASE 
-        WHEN input_qty > 0 THEN ROUND((output_qty / input_qty * 100), 1)
-        ELSE 0
-      END AS progress_rate,
-      
-      work_id as work_no
-      
-    FROM tablets.package_work
-    WHERE work_id IS NOT NULL
-    ORDER BY reg_date DESC
-  `,
-
-  // 라인별 작업 목록 조회 (단순화)
-  selectWorksByLine: `
-    SELECT 
-      work_id,
-      work_order_no,
-      step_name,
-      step_status,
-      input_qty,
-      output_qty,
-      employee_name,
-      product_name,
-      line_id,
-      work_line,
-      
-      COALESCE(product_name, step_name, '제품명없음') as final_product_name,
-      COALESCE(work_line, line_id, '라인정보없음') as line_name,
-      
-      CASE 
-        WHEN input_qty > 0 THEN ROUND((output_qty / input_qty * 100), 1)
-        ELSE 0
-      END AS progress_rate,
-      
-      work_id as work_no
-      
-    FROM tablets.package_work
-    WHERE (line_id LIKE ? OR work_line LIKE ?)
-    ORDER BY reg_date DESC
-  `,
-
-  // ========== 디버깅용 쿼리들 ==========
-  
-  countPackageWork: `
-    SELECT COUNT(*) as total_count 
-    FROM tablets.package_work
-  `,
-  
-  selectRecentWorks: `
-    SELECT 
-      work_id, 
-      work_order_no,
-      step_name, 
-      step_status, 
-      input_qty, 
-      output_qty,
-      product_name,
-      line_id,
-      DATE_FORMAT(reg_date, '%Y-%m-%d %H:%i:%s') as reg_date
-    FROM tablets.package_work 
-    ORDER BY reg_date DESC 
-    LIMIT 10
-  `,
-  
-  checkDataStatus: `
-    SELECT 
-      work_id,
-      work_order_no,
-      step_name,
-      product_name,
-      line_id,
-      step_status,
-      CASE 
-        WHEN product_name IS NOT NULL AND product_name != '' THEN '제품명있음'
-        ELSE '제품명없음'
-      END as product_status
-    FROM tablets.package_work
-    WHERE work_id IS NOT NULL
-    ORDER BY reg_date DESC
-    LIMIT 15
-  `,
-
-  // 부분완료 작업 조회
-  selectPartialWorks: `
-    SELECT 
-      work_id,
-      work_order_no,
-      step_name,
-      step_status,
-      input_qty,
-      output_qty,
-      COALESCE(input_qty, 1000) - COALESCE(output_qty, 0) as remaining_qty,
-      CASE 
-        WHEN input_qty > 0 THEN ROUND((output_qty / input_qty * 100), 1)
-        ELSE 0
-      END AS completion_rate,
-      
-      COALESCE(product_name, step_name, '제품명없음') as final_product_name,
-      COALESCE(work_line, line_id, '라인정보없음') as line_name,
-      work_id as work_no
-      
-    FROM tablets.package_work
-    WHERE 
-      step_status IN ('부분완료', 'PARTIAL_COMPLETE', '일시정지', 'PAUSED')
-      AND COALESCE(input_qty, 1000) > COALESCE(output_qty, 0)
-    ORDER BY upd_date DESC
-  `,
-
-  // 작업 삭제
-  deleteWork: `
-    DELETE FROM tablets.package_work 
-    WHERE work_id = ?
-  `,
-
-  // ========== 제품코드별 조회 ==========
-  
-  selectWorksByProductName: `
-    SELECT 
-      *,
-      COALESCE(product_name, step_name, '제품명없음') as final_product_name,
-      COALESCE(work_line, line_id, '라인정보없음') as line_name,
-      work_id as work_no
-    FROM tablets.package_work
-    WHERE product_name LIKE CONCAT('%', ?, '%')
-      OR step_name LIKE CONCAT('%', ?, '%')
-    ORDER BY reg_date DESC
-  `,
-
-  // ========== 라인 목록 (실제 데이터 기반) ==========
-  
-  selectAllLines: `
-    SELECT 
-      line_id, 
-      'AVAILABLE' as line_status,
-      line_id as curr_work_no,
-      1000 as target_qty,
-      line_id as line_code,
-      COALESCE(work_line, line_id, '라인정보없음') as line_name,
-      CASE 
-        WHEN line_id LIKE '%INNER%' OR step_name LIKE '%내포장%' THEN 'INNER'
-        WHEN line_id LIKE '%OUTER%' OR step_name LIKE '%외포장%' THEN 'OUTER'
-        ELSE 'INNER'
-      END as pkg_type
-    FROM (
-      SELECT DISTINCT line_id, work_line, step_name
-      FROM tablets.package_work 
-      WHERE line_id IS NOT NULL
-      UNION 
-      SELECT 'A_INNER' as line_id, 'A라인' as work_line, '내포장' as step_name
-      UNION 
-      SELECT 'A_OUTER' as line_id, 'A라인' as work_line, '외포장' as step_name
-      UNION 
-      SELECT 'B_INNER' as line_id, 'B라인' as work_line, '내포장' as step_name
-      UNION 
-      SELECT 'B_OUTER' as line_id, 'B라인' as work_line, '외포장' as step_name
-    ) as lines
-    ORDER BY line_id
-  `,
-
-  countPackageLine: `
-    SELECT COUNT(DISTINCT line_id) as total_count 
-    FROM tablets.package_work 
-    WHERE line_id IS NOT NULL
-  `,
-
-  // ========== 워크플로우 관련 쿼리 (향후 확장용) ==========
-  
-  // 내포장 완료 정보 조회
-  selectInnerCompletionByLineCode: `
-    SELECT 
-      work_id,
-      step_name,
-      output_qty,
-      end_time as completion_time,
-      step_status,
-      line_id,
-      ? as line_code,
-      CONCAT(?, ' 내포장') as line_name,
-      
-      -- 완료 타입
-      CASE 
-        WHEN output_qty >= input_qty THEN 'complete'
-        WHEN output_qty > 0 THEN 'partial'
-        ELSE 'none'
-      END as completion_type,
-      
-      -- 달성률
-      CASE 
-        WHEN input_qty > 0 THEN ROUND((output_qty / input_qty * 100), 1)
-        ELSE 0
-      END as completion_rate,
-      
-      COALESCE(product_name, step_name, '제품명없음') as final_product_name
-      
-    FROM tablets.package_work
-    WHERE 
-      (line_id LIKE CONCAT(?, '%') OR step_name LIKE CONCAT('%', ?, '%'))
-      AND (step_name LIKE '%내포장%' OR line_id LIKE '%INNER%' OR step_name NOT LIKE '%외포장%')
-      AND step_status IN ('완료', 'COMPLETED', '부분완료', 'PARTIAL_COMPLETE')
-      AND output_qty > 0
-      
-    ORDER BY end_time DESC
+  // 2-2) 작업실적테이블에서 진행중인 실적 가져오기 (employees 테이블 조인)
+  selectInProgressWorkResult: `
+    SELECT DISTINCT
+      wom.work_order_no as 작업번호,
+      wr.result_id as 실적ID,
+      wrd.process_code as 공정코드,
+      wrd.code_value as 진행상태,
+      COALESCE(e.employee_name, '직원명없음') as 담당자명
+    FROM tablets.work_order_master wom
+    JOIN tablets.work_result wr ON wom.work_order_no = wr.work_order_no
+    JOIN tablets.work_result_detail wrd ON wr.result_id = wrd.result_id
+    LEFT JOIN tablets.employees e ON wrd.manager_id = e.employee_id
+    WHERE wrd.code_value = 'completed'
+    ORDER BY wom.order_start_dt DESC
     LIMIT 1
   `,
 
-  // 외포장에 내포장 완료수량 연계
-  linkInnerToOuter: `
-    UPDATE tablets.package_work 
-    SET 
-      input_qty = ?,
-      upd_date = NOW()
-    WHERE 
-      (line_id LIKE CONCAT(?, '%') OR step_name LIKE CONCAT('%', ?, '%'))
-      AND (step_name LIKE '%외포장%' OR line_id LIKE '%OUTER%')
-      AND step_status IN ('READY', '준비')
+  // 2-3) 작업번호와 함께 상세 정보 가져오기 (employees 테이블 조인)
+  selectWaitingWorkNumber: `
+    SELECT 
+      wom.work_order_no as 작업번호,
+      wrd.result_detail,
+      wrd.process_code as 공정코드,
+      wrd.code_value as 진행상태,
+      wr.result_id as 실적ID,
+      wom.plan_id as 제품코드,
+      COALESCE(p.product_name, '제품명없음') as 제품명,
+      COALESCE(wrd.pass_qty, 1000) as input_qty,
+      'READY' as step_status,
+      COALESCE(e.employee_name, '담당자미정') as employee_name
+    FROM tablets.work_order_master wom
+    JOIN tablets.work_result wr ON wom.work_order_no = wr.work_order_no
+    JOIN tablets.work_result_detail wrd ON wr.result_id = wrd.result_id
+    LEFT JOIN tablets.product p ON wom.plan_id = p.product_code
+    LEFT JOIN tablets.employees e ON wrd.manager_id = e.employee_id
+    WHERE wrd.process_code = ?
+    AND wrd.code_value IN ('waiting', 'ready', '대기', '준비')
+    ORDER BY wrd.work_start_time DESC
+    LIMIT 1
   `,
 
-  // ========== 피드백 기반 실적 테이블 연동 쿼리 (향후 확장용) ==========
-  
-  // 공정흐름도에서 제품코드 기반 공정 정보 가져오기
-  selectProcessFlow: `
-    SELECT 공정그룹코드, 순서, 공정코드
-    FROM tablets.공정흐름도
-    WHERE 제품코드 = ?
-    AND 공정유형코드 = ?
-  `,
-  
-  // 작업실적에서 진행중인 실적 가져오기  
-  selectActiveWorkResult: `
-    SELECT 작업실적.실적ID
-    FROM tablets.작업실적 
-    JOIN tablets.작업실적상세 ON 작업실적.실적ID = 작업실적상세.실적ID
-    WHERE 작업실적.공정그룹코드 = ?
-    AND 작업실적상세.순서 = ?
-    AND 작업실적상세.진행상태 = '완료'
-  `,
-  
-  // 작업실적상세에서 작업번호 가져오기
-  selectWorkNumber: `
-    SELECT 작업번호
-    FROM tablets.작업실적상세
-    WHERE 실적ID = ?
-    AND 순서 = ?
-    AND 진행상태 = '대기'
-  `,
-  
-  // 내포장 작업 시작
+  // 2-4) 작업시작 시 - 내포장시 진행상태를 진행으로 업데이트
   startInnerPackaging: `
-    UPDATE tablets.작업실적상세
-    SET 진행상태 = '진행'
-    WHERE 작업번호 = ?
+    UPDATE tablets.work_result_detail wrd
+    JOIN tablets.work_result wr ON wrd.result_id = wr.result_id
+    JOIN tablets.work_order_master wom ON wr.work_order_no = wom.work_order_no
+    SET 
+      wrd.code_value = 'in_progress',
+      wrd.work_start_time = NOW()
+    WHERE wom.work_order_no = ?
+    AND wrd.process_code = 'p3'
+  `,
+
+  // 내포장 완료시 실적 상세 테이블에 종료시간 업데이트
+  completeInnerPackaging: `
+    UPDATE tablets.work_result_detail wrd
+    JOIN tablets.work_result wr ON wrd.result_id = wr.result_id
+    JOIN tablets.work_order_master wom ON wr.work_order_no = wom.work_order_no
+    SET 
+      wrd.code_value = 'completed',
+      wrd.work_end_time = NOW(),
+      wrd.pass_qty = ?,
+      wrd.process_defective_qty = ?
+    WHERE wom.work_order_no = ?
+    AND wrd.process_code = 'p3'
+  `,
+
+  // 3-1) 포장공정실적에서 내포장 완료된 건 가져오기 (employees 테이블 조인)
+  selectCompletedInnerPackaging: `
+    SELECT 
+      wom.work_order_no as 작업번호,
+      wr.result_id as 실적ID,
+      wrd.process_code as 공정코드,
+      wrd.work_start_time as 시작시간,
+      wrd.work_end_time as 종료시간,
+      wrd.pass_qty as 합격수량,
+      wrd.result_detail,
+      wom.plan_id as 제품코드,
+      COALESCE(p.product_name, '제품명없음') as 제품명,
+      COALESCE(e.employee_name, '담당자미정') as 담당자명
+    FROM tablets.work_order_master wom
+    JOIN tablets.work_result wr ON wom.work_order_no = wr.work_order_no
+    JOIN tablets.work_result_detail wrd ON wr.result_id = wrd.result_id
+    LEFT JOIN tablets.product p ON wom.plan_id = p.product_code
+    LEFT JOIN tablets.employees e ON wrd.manager_id = e.employee_id
+    WHERE wrd.code_value = 'completed'
+    AND wrd.process_code = 'p3'
+    AND wom.plan_id = ?
+    ORDER BY wrd.work_end_time DESC
+    LIMIT 1
+  `,
+
+  // 외포장 작업 시작
+  startOuterPackaging: `
+    UPDATE tablets.work_result_detail wrd
+    JOIN tablets.work_result wr ON wrd.result_id = wr.result_id
+    JOIN tablets.work_order_master wom ON wr.work_order_no = wom.work_order_no
+    SET 
+      wrd.code_value = 'in_progress',
+      wrd.work_start_time = NOW(),
+      wrd.pass_qty = ?
+    WHERE wom.work_order_no = ?
+    AND wrd.process_code = 'p5'
+  `,
+
+  // 3-2) 외포장공정 종료 시 - 진행상태를 검사중으로 업데이트
+  completeOuterPackaging: `
+    UPDATE tablets.work_result_detail wrd
+    JOIN tablets.work_result wr ON wrd.result_id = wr.result_id
+    JOIN tablets.work_order_master wom ON wr.work_order_no = wom.work_order_no
+    SET 
+      wrd.code_value = 'inspection',
+      wrd.work_end_time = NOW(),
+      wrd.pass_qty = ?,
+      wrd.process_defective_qty = ?
+    WHERE wom.work_order_no = ?
+    AND wrd.process_code = 'p5'
+  `,
+
+  // ========== 새 작업 생성 쿼리 ==========
+
+  // 새 work_order_master 생성
+  createNewWorkOrderMaster: `
+    INSERT INTO tablets.work_order_master (
+      work_order_no, plan_id, writer_id, write_date, 
+      order_start_dt, order_end_dt, order_remark
+    ) VALUES (?, ?, 2, NOW(), NOW(), DATE_ADD(NOW(), INTERVAL 1 DAY), ?)
+  `,
+
+  // 새 work_result 생성
+  createNewWorkResult: `
+    INSERT INTO tablets.work_result (
+      result_id, work_order_no, process_group_code, result_remark, 
+      code_value, work_start_date, work_end_date
+    ) VALUES (?, ?, ?, ?, 'waiting', NOW(), NULL)
+  `,
+
+  // 새 work_result_detail 생성 (활성 직원 자동 할당)
+  createNewWorkResultDetail: `
+    INSERT INTO tablets.work_result_detail (
+      result_detail, result_id, process_code, code_value, 
+      work_start_time, pass_qty, process_defective_qty, 
+      manager_id, eq_type_code
+    ) VALUES (?, ?, ?, 'waiting', NOW(), ?, '0', 
+      (SELECT employee_id FROM tablets.employees WHERE employment_status = 'ACTIVE' LIMIT 1), 
+      'i8')
+  `,
+
+  // 기존 실적에 외포장 단계 추가 (활성 직원 자동 할당)
+  addOuterPackagingStep: `
+    INSERT INTO tablets.work_result_detail (
+      result_detail, result_id, process_code, code_value, 
+      work_start_time, pass_qty, process_defective_qty, 
+      manager_id, eq_type_code
+    ) VALUES (?, ?, 'p5', 'waiting', NOW(), ?, '0', 
+      (SELECT employee_id FROM tablets.employees WHERE employment_status = 'ACTIVE' LIMIT 1), 
+      'i8')
+  `,
+
+  // ========== 데이터 조회 쿼리들 (employees 테이블 조인) ==========
+
+  // work_result_detail과 work_order_master 조인 데이터 확인 (employees 테이블 조인)
+  selectAllWorkResultDetail: `
+    SELECT 
+      wom.work_order_no as 작업번호,
+      wrd.result_detail,
+      wr.result_id,
+      wrd.process_code,
+      wrd.code_value,
+      wom.plan_id as 제품코드,
+      COALESCE(p.product_name, '제품명없음') as 제품명,
+      wrd.pass_qty,
+      wrd.work_start_time,
+      COALESCE(e.employee_name, '담당자미정') as 담당자명,
+      COALESCE(e.position, '직급미정') as 직급
+    FROM tablets.work_result_detail wrd
+    JOIN tablets.work_result wr ON wrd.result_id = wr.result_id
+    JOIN tablets.work_order_master wom ON wr.work_order_no = wom.work_order_no
+    LEFT JOIN tablets.product p ON wom.plan_id = p.product_code
+    LEFT JOIN tablets.employees e ON wrd.manager_id = e.employee_id
+    ORDER BY wrd.work_start_time DESC
+    LIMIT 20
+  `,
+
+  // 내포장(p3) 관련 데이터만 확인 (employees 테이블 조인)
+  selectInnerPackagingData: `
+    SELECT 
+      wom.work_order_no as 작업번호,
+      wrd.result_detail,
+      wr.result_id,
+      wrd.process_code,
+      wrd.code_value as 진행상태,
+      wom.plan_id as 제품코드,
+      COALESCE(p.product_name, '제품명없음') as 제품명,
+      wrd.pass_qty as 합격수량,
+      wrd.work_start_time as 등록일시,
+      COALESCE(e.employee_name, '담당자미정') as 담당자명,
+      COALESCE(e.position, '직급미정') as 직급
+    FROM tablets.work_result_detail wrd
+    JOIN tablets.work_result wr ON wrd.result_id = wr.result_id
+    JOIN tablets.work_order_master wom ON wr.work_order_no = wom.work_order_no
+    LEFT JOIN tablets.product p ON wom.plan_id = p.product_code
+    LEFT JOIN tablets.employees e ON wrd.manager_id = e.employee_id
+    WHERE wrd.process_code = 'p3'
+    ORDER BY wrd.work_start_time DESC
+    LIMIT 10
+  `,
+
+  // 외포장(p5) 관련 데이터만 확인 (employees 테이블 조인)
+  selectOuterPackagingData: `
+    SELECT 
+      wom.work_order_no as 작업번호,
+      wrd.result_detail,
+      wr.result_id,
+      wrd.process_code,
+      wrd.code_value as 진행상태,
+      wom.plan_id as 제품코드,
+      COALESCE(p.product_name, '제품명없음') as 제품명,
+      wrd.pass_qty as 합격수량,
+      wrd.work_start_time as 등록일시,
+      COALESCE(e.employee_name, '담당자미정') as 담당자명,
+      COALESCE(e.position, '직급미정') as 직급
+    FROM tablets.work_result_detail wrd
+    JOIN tablets.work_result wr ON wrd.result_id = wr.result_id
+    JOIN tablets.work_order_master wom ON wr.work_order_no = wom.work_order_no
+    LEFT JOIN tablets.product p ON wom.plan_id = p.product_code
+    LEFT JOIN tablets.employees e ON wrd.manager_id = e.employee_id
+    WHERE wrd.process_code = 'p5'
+    ORDER BY wrd.work_start_time DESC
+    LIMIT 10
+  `,
+
+  // 특정 실적ID의 외포장 작업 확인 (employees 테이블 조인)
+  selectOuterWorkByResultId: `
+    SELECT 
+      wom.work_order_no as 작업번호,
+      wrd.result_detail,
+      wrd.process_code as 공정코드,
+      wrd.code_value as 진행상태,
+      wr.result_id as 실적ID,
+      wom.plan_id as 제품코드,
+      COALESCE(p.product_name, '제품명없음') as 제품명,
+      COALESCE(wrd.pass_qty, 1000) as input_qty,
+      'READY' as step_status,
+      COALESCE(e.employee_name, '담당자미정') as employee_name
+    FROM tablets.work_result_detail wrd
+    JOIN tablets.work_result wr ON wrd.result_id = wr.result_id
+    JOIN tablets.work_order_master wom ON wr.work_order_no = wom.work_order_no
+    LEFT JOIN tablets.product p ON wom.plan_id = p.product_code
+    LEFT JOIN tablets.employees e ON wrd.manager_id = e.employee_id
+    WHERE wr.result_id = ?
+    AND wrd.process_code = 'p5'
+    AND wrd.code_value IN ('waiting', 'ready', '대기', '준비')
+    LIMIT 1
+  `,
+
+  // ========== 라인별 작업번호 조회 (employees 테이블 조인) ==========
+  
+  // 내포장 라인별 작업번호 조회 (employees 테이블 조인)
+  selectInnerWorksByLine: `
+    SELECT 
+      wom.work_order_no as 작업번호,
+      wom.plan_id as 제품코드,
+      COALESCE(p.product_name, '제품명없음') as 제품명,
+      wrd.code_value as 진행상태,
+      wrd.pass_qty as input_qty,
+      0 as output_qty,
+      COALESCE(e.employee_name, '담당자미정') as employee_name,
+      ? as line_id,
+      ? as line_name,
+      wrd.result_detail,
+      '내포장' as step_name,
+      'READY' as step_status
+    FROM tablets.work_order_master wom
+    JOIN tablets.work_result wr ON wom.work_order_no = wr.work_order_no
+    JOIN tablets.work_result_detail wrd ON wr.result_id = wrd.result_id
+    LEFT JOIN tablets.product p ON wom.plan_id = p.product_code
+    LEFT JOIN tablets.employees e ON wrd.manager_id = e.employee_id
+    WHERE wrd.process_code = 'p3'
+    AND wrd.code_value IN ('waiting', 'ready', '대기', '준비')
+    AND (wom.plan_id LIKE ? OR p.product_name LIKE ?)
+    ORDER BY wom.order_start_dt ASC
+    LIMIT 1
+  `,
+
+  // 외포장 라인별 작업번호 조회 (employees 테이블 조인)
+  selectOuterWorksByLine: `
+    SELECT 
+      wom.work_order_no as 작업번호,
+      wom.plan_id as 제품코드,
+      COALESCE(p.product_name, '제품명없음') as 제품명,
+      wrd.code_value as 진행상태,
+      wrd.pass_qty as input_qty,
+      0 as output_qty,
+      COALESCE(e.employee_name, '담당자미정') as employee_name,
+      ? as line_id,
+      ? as line_name,
+      wrd.result_detail,
+      '외포장' as step_name,
+      'READY' as step_status
+    FROM tablets.work_order_master wom
+    JOIN tablets.work_result wr ON wom.work_order_no = wr.work_order_no
+    JOIN tablets.work_result_detail wrd ON wr.result_id = wrd.result_id
+    LEFT JOIN tablets.product p ON wom.plan_id = p.product_code
+    LEFT JOIN tablets.employees e ON wrd.manager_id = e.employee_id
+    WHERE wrd.process_code = 'p5'
+    AND wrd.code_value IN ('waiting', 'ready', '대기', '준비')
+    AND (wom.plan_id LIKE ? OR p.product_name LIKE ?)
+    ORDER BY wom.order_start_dt ASC
+    LIMIT 1
+  `,
+
+  // ========== 작업실적 조회 쿼리들 (employees 테이블 조인) ==========
+
+  // 작업실적 전체 조회 (employees 테이블 조인)
+  selectAllWorkResults: `
+    SELECT 
+      wom.work_order_no as 작업번호,
+      wom.plan_id as 제품코드,
+      wr.result_id,
+      wom.order_start_dt,
+      wom.order_end_dt,
+      wrd.result_detail,
+      wrd.process_code,
+      wrd.code_value as detail_status,
+      wrd.work_start_time,
+      wrd.work_end_time,
+      wrd.pass_qty,
+      wrd.process_defective_qty,
+      COALESCE(p.product_name, '제품명없음') as 제품명,
+      COALESCE(e.employee_name, '담당자미정') as 담당자명,
+      COALESCE(e.position, '직급미정') as 직급
+    FROM tablets.work_order_master wom
+    LEFT JOIN tablets.work_result wr ON wom.work_order_no = wr.work_order_no
+    LEFT JOIN tablets.work_result_detail wrd ON wr.result_id = wrd.result_id
+    LEFT JOIN tablets.product p ON wom.plan_id = p.product_code
+    LEFT JOIN tablets.employees e ON wrd.manager_id = e.employee_id
+    ORDER BY wom.order_start_dt DESC, wrd.process_code ASC
   `,
   
-  // 외포장 공정 종료시 상태 업데이트
-  updateOuterPackagingToInspection: `
-    UPDATE tablets.작업실적상세
-    SET 진행상태 = '검사중'
-    WHERE 작업번호 = ?
+  // 특정 작업번호의 실적 조회 (employees 테이블 조인)
+  selectWorkResultByWorkNo: `
+    SELECT 
+      wom.work_order_no as 작업번호,
+      wom.plan_id as 제품코드,
+      wr.result_id,
+      wom.order_start_dt,
+      wom.order_end_dt,
+      wrd.result_detail,
+      wrd.process_code,
+      wrd.code_value as detail_status,
+      wrd.work_start_time,
+      wrd.work_end_time,
+      wrd.pass_qty,
+      wrd.process_defective_qty,
+      COALESCE(p.product_name, '제품명없음') as 제품명,
+      COALESCE(e.employee_name, '담당자미정') as 담당자명,
+      COALESCE(e.position, '직급미정') as 직급
+    FROM tablets.work_order_master wom
+    JOIN tablets.work_result wr ON wom.work_order_no = wr.work_order_no
+    JOIN tablets.work_result_detail wrd ON wr.result_id = wrd.result_id
+    LEFT JOIN tablets.product p ON wom.plan_id = p.product_code
+    LEFT JOIN tablets.employees e ON wrd.manager_id = e.employee_id
+    WHERE wom.work_order_no = ?
+    ORDER BY wrd.process_code
+  `,
+
+  // ========== 디버깅용 쿼리들 (employees 테이블 조인) ==========
+
+  // 제품별 작업 현황 확인 (employees 테이블 조인)
+  selectWorkStatusByProduct: `
+    SELECT 
+      wom.plan_id as 제품코드,
+      COALESCE(p.product_name, '제품명없음') as 제품명,
+      COUNT(DISTINCT wom.work_order_no) as 총작업수,
+      COUNT(CASE WHEN wrd.code_value = 'completed' AND wrd.process_code = 'p3' THEN 1 END) as 내포장완료,
+      COUNT(CASE WHEN wrd.code_value = 'completed' AND wrd.process_code = 'p5' THEN 1 END) as 외포장완료,
+      COUNT(CASE WHEN wrd.code_value IN ('waiting', 'ready') THEN 1 END) as 대기중작업,
+      GROUP_CONCAT(DISTINCT e.employee_name) as 담당자목록
+    FROM tablets.work_order_master wom
+    LEFT JOIN tablets.work_result wr ON wom.work_order_no = wr.work_order_no
+    LEFT JOIN tablets.work_result_detail wrd ON wr.result_id = wrd.result_id
+    LEFT JOIN tablets.product p ON wom.plan_id = p.product_code
+    LEFT JOIN tablets.employees e ON wrd.manager_id = e.employee_id
+    GROUP BY wom.plan_id, p.product_name
+    ORDER BY wom.plan_id
+  `,
+
+  // 라인별 작업 현황 확인 (employees 테이블 조인)
+  selectWorkStatusByLine: `
+    SELECT 
+      wrd.process_code as 라인구분,
+      CASE WHEN wrd.process_code = 'p3' THEN '내포장' ELSE '외포장' END as 라인명,
+      COUNT(*) as 총작업수,
+      COUNT(CASE WHEN wrd.code_value = 'waiting' THEN 1 END) as 대기중,
+      COUNT(CASE WHEN wrd.code_value = 'in_progress' THEN 1 END) as 진행중,
+      COUNT(CASE WHEN wrd.code_value = 'completed' THEN 1 END) as 완료,
+      COUNT(CASE WHEN wrd.code_value = 'inspection' THEN 1 END) as 검사중,
+      GROUP_CONCAT(DISTINCT e.employee_name) as 담당자목록
+    FROM tablets.work_result_detail wrd
+    JOIN tablets.work_result wr ON wrd.result_id = wr.result_id
+    JOIN tablets.work_order_master wom ON wr.work_order_no = wom.work_order_no
+    LEFT JOIN tablets.employees e ON wrd.manager_id = e.employee_id
+    WHERE wrd.process_code IN ('p3', 'p5')
+    GROUP BY wrd.process_code
+    ORDER BY wrd.process_code
+  `,
+
+  // work_order_master 테이블에서 실제 작업번호들 확인 (employees 테이블 조인)
+  selectActualWorkOrders: `
+    SELECT 
+      wom.work_order_no as 작업번호,
+      wom.plan_id as 제품코드,
+      wom.order_start_dt as 시작일시,
+      wom.order_end_dt as 종료일시,
+      wom.order_remark as 비고,
+      COALESCE(p.product_name, '제품명없음') as 제품명,
+      COUNT(wrd.result_detail) as 작업상세수,
+      GROUP_CONCAT(DISTINCT e.employee_name) as 담당자목록
+    FROM tablets.work_order_master wom
+    LEFT JOIN tablets.work_result wr ON wom.work_order_no = wr.work_order_no
+    LEFT JOIN tablets.work_result_detail wrd ON wr.result_id = wrd.result_id
+    LEFT JOIN tablets.product p ON wom.plan_id = p.product_code
+    LEFT JOIN tablets.employees e ON wrd.manager_id = e.employee_id
+    GROUP BY wom.work_order_no, wom.plan_id, wom.order_start_dt, 
+             wom.order_end_dt, wom.order_remark, p.product_name
+    ORDER BY wom.order_start_dt DESC
+    LIMIT 20
+  `,
+
+  // ========== employees 테이블 관련 쿼리 추가 ==========
+
+  // 활성 직원 목록 조회
+  selectActiveEmployees: `
+    SELECT 
+      employee_id,
+      employee_name,
+      position,
+      hire_date,
+      phone,
+      email,
+      employment_status
+    FROM tablets.employees
+    WHERE employment_status = 'ACTIVE'
+    ORDER BY employee_name
+  `,
+
+  // 특정 직원 정보 조회
+  selectEmployeeById: `
+    SELECT 
+      employee_id,
+      employee_name,
+      position,
+      hire_date,
+      phone,
+      email,
+      employment_status
+    FROM tablets.employees
+    WHERE employee_id = ?
+  `,
+
+  // 직원별 작업 현황 조회
+  selectWorkStatusByEmployee: `
+    SELECT 
+      e.employee_id,
+      e.employee_name,
+      e.position,
+      COUNT(wrd.result_detail) as 총담당작업수,
+      COUNT(CASE WHEN wrd.code_value = 'waiting' THEN 1 END) as 대기중작업,
+      COUNT(CASE WHEN wrd.code_value = 'in_progress' THEN 1 END) as 진행중작업,
+      COUNT(CASE WHEN wrd.code_value = 'completed' THEN 1 END) as 완료작업,
+      COUNT(CASE WHEN wrd.process_code = 'p3' THEN 1 END) as 내포장작업,
+      COUNT(CASE WHEN wrd.process_code = 'p5' THEN 1 END) as 외포장작업
+    FROM tablets.employees e
+    LEFT JOIN tablets.work_result_detail wrd ON e.employee_id = wrd.manager_id
+    WHERE e.employment_status = 'ACTIVE'
+    GROUP BY e.employee_id, e.employee_name, e.position
+    ORDER BY e.employee_name
   `
-};
+}

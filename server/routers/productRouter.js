@@ -16,7 +16,7 @@ const productService =require('../services/productService.js');
 // 이미지 저장 설정
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, '../client/public/img/product');
+    cb(null, '../server/public/img/product');
   },
   filename: (req, file, cb) => {
     const filename = `${Date.now()}${path.extname(file.originalname)}`;

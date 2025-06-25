@@ -249,28 +249,4 @@ module.exports = {
     WHERE e.employee_id = ?
   `,
 
-  // ================================
-  // 비밀번호 관리 쿼리 (필요시 사용)
-  // ================================
-  
-  // 비밀번호 업데이트
-  updateEmployeePassword: `
-    UPDATE employees 
-    SET password = ?, upd_date = NOW() 
-    WHERE employee_id = ? AND employment_status = 'Y'
-  `,
-  
-  // 비밀번호 변경 이력 테이블 생성 (선택사항)
-  createPasswordHistoryTable: `
-    CREATE TABLE IF NOT EXISTS password_history (
-      id BIGINT AUTO_INCREMENT PRIMARY KEY,
-      employee_id VARCHAR(20) NOT NULL,
-      old_password_hash VARCHAR(255),
-      new_password_hash VARCHAR(255),
-      changed_by VARCHAR(20),
-      change_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      change_reason VARCHAR(255),
-      INDEX idx_employee_date (employee_id, change_date)
-    )
-  `
 };

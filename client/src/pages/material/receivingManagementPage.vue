@@ -91,13 +91,18 @@ interface MaterialReceipt {
   receive_qty?: number
 }
 
-const formatToKST = (isoDate: string): string => {
+const formatToKST = (isoDate: string | null | undefined): string => {
+  if (!isoDate) return ''
   const date = new Date(isoDate)
+  if (isNaN(date.getTime())) return ''
   const kst = new Date(date.getTime() + 9 * 60 * 60 * 1000)
   return `${kst.getFullYear()}-${String(kst.getMonth() + 1).padStart(2, '0')}-${String(kst.getDate()).padStart(2, '0')} ${String(kst.getHours()).padStart(2, '0')}:${String(kst.getMinutes()).padStart(2, '0')}`
 }
 
-const toDateOnly = (iso: string): string => iso.split('T')[0]
+const toDateOnly = (iso: string | null | undefined): string => {
+  if (!iso || typeof iso !== 'string' || !iso.includes('T')) return ''
+  return iso.split('T')[0]
+}
 
 const generateLotNumber = (materialCode: string): string => {
   const now = new Date()

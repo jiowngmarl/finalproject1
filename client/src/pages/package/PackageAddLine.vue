@@ -179,21 +179,8 @@
               </td>
               <td>{{ line.eq_name || '-' }}</td>
               <td>
-                <!-- 상태 변경 가능한 셀렉트박스 (권한 있는 경우) -->
-                <div v-if="authStore.canManageLines" class="status-control">
-                  <select 
-                    :value="line.line_state" 
-                    @change="changeLineStatus(line, $event.target.value)"
-                    class="status-select"
-                    :class="getStatusClass(line.line_status)"
-                  >
-                    <option value="s1">가동 중</option>
-                    <option value="s2">가동대기 중</option>
-                    <option value="s3">가동정지</option>
-                  </select>
-                </div>
-                <!-- 권한 없는 경우 읽기 전용 뱃지 -->
-                <span v-else class="status-badge" :class="getStatusClass(line.line_status)">
+                <!-- 모든 사용자에게 읽기 전용 상태 배지 표시 -->
+                <span class="status-badge" :class="getStatusClass(line.line_status)">
                   {{ line.line_status || '가동대기 중' }}
                 </span>
               </td>
@@ -267,12 +254,13 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label>상태</label>
-                <select v-model="editFormData.line_state">
+                <label>상태 *</label>
+                <select v-model="editFormData.line_state" :class="{ error: editErrors.line_state }">
                   <option value="s1">가동 중</option>
                   <option value="s2">가동대기 중</option>
                   <option value="s3">가동정지</option>
                 </select>
+                <div v-if="editErrors.line_state" class="error-message">{{ editErrors.line_state }}</div>
               </div>
               <div class="form-group">
                 <label>지시수량 (정) *</label>
@@ -592,7 +580,6 @@ const statusFilter = ref('')
 const typeFilter = ref('')
 const loading = ref(false)
 const saving = ref(false)
-const statusChanging = ref(false)
 const loadingMessage = ref('데이터를 불러오는 중...')
 
 const currentEmployee = ref(null)
@@ -766,51 +753,6 @@ function checkPackagingPermission(action = '이 작업') {
 function closePermissionModal() {
   showPermissionModal.value = false
   permissionMessage.value = ''
-}
-
-// 상태 변경 함수
-async function changeLineStatus(line, newStatus) {
-  if (!checkPackagingPermission('상태 변경')) return
-  
-  const statusText = getStatusText(newStatus)
-  const currentStatusText = line.line_status || '알 수 없음'
-  
-  if (!confirm(`${line.line_name}의 상태를 '${currentStatusText}'에서 '${statusText}'로 변경하시겠습니까?`)) {
-    return
-  }
-  
-  statusChanging.value = true
-  
-  try {
-    setApiStatus('info', `${line.line_name} 상태를 변경하는 중...`)
-    
-    const updateData = {
-      line_state: newStatus,
-      line_type: line.line_type,
-      eq_name: line.eq_name,
-      max_capacity: line.max_capacity,
-      current_speed: line.current_speed,
-      product_code: line.product_code,
-      target_qty: line.target_qty,
-      description: line.description,
-      employee_id: line.employee_id
-    }
-    
-    const response = await axios.put(`/lines/${line.line_id}`, updateData)
-    
-    if (response.data.success) {
-      setApiStatus('success', `${line.line_name} 상태가 '${statusText}'로 변경되었습니다.`)
-      await loadLines()
-    } else {
-      throw new Error(response.data.message || '상태 변경에 실패했습니다')
-    }
-  } catch (error) {
-    console.error('상태 변경 실패:', error)
-    setApiStatus('error', error.response?.data?.message || `상태 변경 실패: ${error.message}`)
-    await loadLines()
-  } finally {
-    statusChanging.value = false
-  }
 }
 
 function getStatusText(status) {
@@ -990,7 +932,7 @@ function setDefaultEquipments() {
     { eq_name: '10정 블리스터 포장기', line_type: 'INNER', eq_type: 'INNER' },
     { eq_name: '30정 블리스터 포장기', line_type: 'INNER', eq_type: 'INNER' },
     { eq_name: '60정 블리스터 포장기', line_type: 'INNER', eq_type: 'INNER' },
-    { eq_name: '100정 병 모노블럭', line_type: 'INNER', eq_type: 'INNER' }
+    { eq_name: '병 모노블럭', line_type: 'INNER', eq_type: 'INNER' }
   ];
   
   // 외포장 전용 설비
@@ -998,7 +940,7 @@ function setDefaultEquipments() {
     { eq_name: '소형 카톤포장기', line_type: 'OUTER', eq_type: 'OUTER' },
     { eq_name: '중형 카톤포장기', line_type: 'OUTER', eq_type: 'OUTER' },
     { eq_name: '대형 카톤포장기', line_type: 'OUTER', eq_type: 'OUTER' },
-    { eq_name: '특수 카톤포장기', line_type: 'OUTER', eq_type: 'OUTER' }
+    { eq_name: '병용 카톤포장기', line_type: 'OUTER', eq_type: 'OUTER' }
   ];
   
   // 전체 설비 목록도 업데이트
@@ -1013,7 +955,7 @@ function setDefaultInnerEquipments() {
     { eq_name: '10정 블리스터 포장기', line_type: 'INNER', eq_type: 'INNER' },
     { eq_name: '30정 블리스터 포장기', line_type: 'INNER', eq_type: 'INNER' },
     { eq_name: '60정 블리스터 포장기', line_type: 'INNER', eq_type: 'INNER' },
-    { eq_name: '100정 병 모노블럭', line_type: 'INNER', eq_type: 'INNER'}
+    { eq_name: '병 모노블럭', line_type: 'INNER', eq_type: 'INNER'}
   ]
   console.log('📦 기본 내포장 설비 설정 완료:', innerEquipments.value.map(eq => eq.eq_name))
 }
@@ -1023,7 +965,7 @@ function setDefaultOuterEquipments() {
     { eq_name: '소형 카톤포장기', line_type: 'OUTER', eq_type: 'OUTER' },
     { eq_name: '중형 카톤포장기', line_type: 'OUTER', eq_type: 'OUTER' },
     { eq_name: '대형 카톤포장기', line_type: 'OUTER', eq_type: 'OUTER' },
-    { eq_name: '특수 카톤포장기', line_type: 'OUTER', eq_type: 'OUTER' }
+    { eq_name: '병용 카톤포장기', line_type: 'OUTER', eq_type: 'OUTER' }
   ]
   console.log('📦 기본 외포장 설비 설정 완료:', outerEquipments.value.map(eq => eq.eq_name))
 }
@@ -1619,7 +1561,7 @@ defineOptions({
 </script>
 
 <style scoped>
-/* 포장 라인 관리 CSS - 아이콘 완전 제거 및 개선된 디자인 */
+/* 포장 라인 관리 CSS - 상태 셀렉트박스 제거 및 개선된 디자인 */
 
 .package-line-management {
   max-width: 1200px;
@@ -2042,7 +1984,7 @@ defineOptions({
   color: #7c3aed;
 }
 
-/* 상태 배지 */
+/* 상태 배지 (모든 사용자에게 읽기 전용) */
 .status-badge {
   padding: 4px 8px;
   border-radius: 4px;
@@ -2066,14 +2008,6 @@ defineOptions({
 .status-badge.stopped {
   background-color: #fee2e2;
   color: #991b1b;
-}
-
-.status-control .status-select {
-  padding: 4px 8px;
-  font-size: 12px;
-  border-radius: 4px;
-  border: 1px solid #d1d5db;
-  min-width: 100px;
 }
 
 /* 용량 정보 */

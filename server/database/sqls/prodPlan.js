@@ -15,7 +15,7 @@ const searchProdPlanProducts = `
   ORDER BY p.product_name
 `;
 
-// 2. 주문 검색 (모달용)
+// 2. 주문 검색 (모달용) - 제품명 규격(수량) 형식으로 변경
 const searchProdPlanOrders = `
   SELECT 
     om.order_id,
@@ -24,7 +24,15 @@ const searchProdPlanOrders = `
     om.delivery_date,
     om.remarks,
     GROUP_CONCAT(
-      COALESCE(p.product_name, od.product_code)
+      CONCAT(
+        COALESCE(p.product_name, od.product_code),
+        CASE 
+          WHEN COALESCE(p.product_stand, '') != '' 
+          THEN CONCAT(' ', p.product_stand) 
+          ELSE '' 
+        END,
+        '(', od.order_qty, ')'
+      )
       ORDER BY od.order_detail_id
       SEPARATOR ', '
     ) as product_summary,
@@ -56,21 +64,24 @@ const searchProdPlanList = `
     pm.plan_end_dt,
     pm.plan_remark,
     pm.employee_name as writer_name,
-    CONCAT(
-      COALESCE(
-        (SELECT p2.product_name 
-         FROM production_plan_detail pd2 
-         LEFT JOIN product p2 ON pd2.product_code = p2.product_code 
-         WHERE pd2.plan_id = pm.plan_id 
-         ORDER BY pd2.plan_detail_id
-         LIMIT 1), 
-        '제품없음'
-      ),
-      CASE 
-        WHEN (SELECT COUNT(*) FROM production_plan_detail pd3 WHERE pd3.plan_id = pm.plan_id) > 1 
-        THEN CONCAT(' 외 ', (SELECT COUNT(*) - 1 FROM production_plan_detail pd4 WHERE pd4.plan_id = pm.plan_id), '건')
-        ELSE ''
-      END
+    COALESCE(
+      (SELECT GROUP_CONCAT(
+        CONCAT(
+          p2.product_name,
+          CASE 
+            WHEN COALESCE(p2.product_stand, '') != '' 
+            THEN CONCAT(' ', p2.product_stand) 
+            ELSE '' 
+          END,
+          '(', pd2.plan_qty, ')'
+        )
+        ORDER BY pd2.plan_detail_id
+        SEPARATOR ', '
+      )
+      FROM production_plan_detail pd2 
+      LEFT JOIN product p2 ON pd2.product_code = p2.product_code 
+      WHERE pd2.plan_id = pm.plan_id),
+      '제품없음'
     ) as product_summary,
     COALESCE((SELECT SUM(pd5.plan_qty) FROM production_plan_detail pd5 WHERE pd5.plan_id = pm.plan_id), 0) as total_qty
   FROM production_plan_master pm
@@ -249,10 +260,18 @@ const getProdPlanIntegratedList = `
     pm.employee_name,
     pm.employee_name as writer_name,
     
-    -- 제품 정보 (제품명과 수량 포함)
+    -- 제품 정보 (제품명 규격(수량) 포함)
     COALESCE(
       (SELECT GROUP_CONCAT(
-        CONCAT(p2.product_name, '(', pd2.plan_qty, ')')
+        CONCAT(
+          p2.product_name, 
+          CASE 
+            WHEN COALESCE(p2.product_stand, '') != '' 
+            THEN CONCAT(' ', p2.product_stand) 
+            ELSE '' 
+          END,
+          '(', pd2.plan_qty, ')'
+        )
         ORDER BY pd2.plan_detail_id
         SEPARATOR ', '
       )

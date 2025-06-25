@@ -97,12 +97,12 @@
             <tr>
               <th class="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700 min-w-[120px]">계획번호</th>
               <th class="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700 min-w-[150px]">계획명</th>
-              <th class="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700 min-w-[300px]">제품정보</th>
+              <th class="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700 min-w-[280px]">제품정보</th>
               <th class="border border-gray-200 px-3 py-2 text-center font-medium text-gray-700 min-w-[80px]">총수량</th>
               <th class="border border-gray-200 px-3 py-2 text-center font-medium text-gray-700 min-w-[100px]">작성일</th>
               <th class="border border-gray-200 px-3 py-2 text-center font-medium text-gray-700 min-w-[100px]">시작예정일</th>
               <th class="border border-gray-200 px-3 py-2 text-center font-medium text-gray-700 min-w-[100px]">종료예정일</th>
-              <th class="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700 min-w-[80px]">작성자</th>
+              <th class="border border-gray-200 px-3 py-2 text-left font-medium text-gray-700 min-w-[60px]">작성자</th>
             </tr>
           </thead>
           <tbody>
@@ -126,7 +126,7 @@
               <td class="border border-gray-200 px-3 py-2">{{ plan.plan_id }}</td>
               <td class="border border-gray-200 px-3 py-2">{{ plan.plan_name }}</td>
               <td class="border border-gray-200 px-3 py-2">
-                <span class="text-blue-700 font-medium">{{ plan.product_summary }}</span>
+                <span class="text font-medium">{{ plan.product_summary }}</span>
               </td>
               <td class="border border-gray-200 px-3 py-2 text-center">
                 <span class="font-semibold">{{ formatNumber(plan.total_qty) }}</span>
