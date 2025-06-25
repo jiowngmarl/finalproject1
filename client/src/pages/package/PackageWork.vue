@@ -651,22 +651,6 @@
             v-if="workInfo.lineType === 'INNER'"
             class="next-step-info inner-completion"
           >
-            <div class="info-box">
-              <div class="info-content">
-                <h5>다음 단계: 외포장 라인 선택</h5>
-                <p>
-                  내포장 작업 완료 후 work_result_detail 테이블에 종료시간이
-                  업데이트되고 외포장 라인 선택 페이지로 이동합니다.
-                </p>
-                <ul>
-                  <li>work_result_detail.work_end_time 업데이트</li>
-                  <li>work_result_detail.code_value = 'completed'</li>
-                  <li>라인 선택 페이지로 자동 이동</li>
-                  <li>외포장 라인 자동 활성화</li>
-                  <li>완료수량 자동 연계</li>
-                </ul>
-              </div>
-            </div>
           </div>
 
           <div
@@ -674,29 +658,6 @@
             class="next-step-info outer-completion"
           >
             <div class="info-box">
-              <div class="info-content">
-                <h5>전체 포장 작업 완료!</h5>
-                <p>
-                  외포장 완료 시 work_result_detail 테이블에 종료시간이
-                  업데이트되고 진행상태가 '검사중'으로 변경됩니다.
-                </p>
-                <div class="completion-chain">
-                  <div class="chain-item">
-                    <span class="chain-text">내포장</span>
-                    <span class="chain-status">완료</span>
-                  </div>
-                  <div class="chain-arrow">다음</div>
-                  <div class="chain-item">
-                    <span class="chain-text">외포장</span>
-                    <span class="chain-status">완료</span>
-                  </div>
-                </div>
-                <ul>
-                  <li>work_result_detail.work_end_time 업데이트</li>
-                  <li>work_result_detail.code_value = 'inspection'</li>
-                  <li>전체 포장 프로세스 완료</li>
-                </ul>
-              </div>
             </div>
           </div>
 
@@ -1144,7 +1105,7 @@ const isTimeWarning = computed(() => {
 // 생산 시뮬레이션 설정
 const productionSettings = ref({
   productionSpeed: 30,
-  defectRate: 0.02,
+  defectRate: 0,
   targetQty: 0,
   currentProgress: 0,
 });
@@ -1824,10 +1785,11 @@ async function confirmCompleteWork() {
 
     const endTime = new Date().toISOString();
     const passQty =
-      currentWork.value.output_qty || Math.floor(inputQuantity.value * 0.95);
+      //currentWork.value.output_qty || Math.floor(inputQuantity.value * 0.95);
+      currentWork.value.output_qty || Math.floor(inputQuantity.value );
     const defectQty =
-      currentWork.value.defect_qty || Math.floor(inputQuantity.value * 0.05);
-
+      //currentWork.value.defect_qty || Math.floor(inputQuantity.value * 0.05);
+      currentWork.value.defect_qty || Math.floor(inputQuantity.value);
     // 워크플로우 완료 처리
     if (workInfo.value.lineType === "INNER") {
       try {
@@ -3662,80 +3624,7 @@ onUnmounted(() => {
   font-weight: 700;
 }
 
-.next-step-info {
-  margin: 24px 0;
-  padding: 20px;
-  border-radius: 8px;
-}
 
-.next-step-info.inner-completion {
-  background: #f0f9ff;
-  border: 1px solid #0ea5e9;
-}
-
-.next-step-info.outer-completion {
-  background: #f0fdf4;
-  border: 1px solid #22c55e;
-}
-
-.info-box {
-  background: white;
-  border-radius: 6px;
-  padding: 16px;
-}
-
-.info-content h5 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0 0 8px 0;
-}
-
-.info-content p {
-  color: #64748b;
-  margin: 0 0 12px 0;
-  line-height: 1.6;
-}
-
-.info-content ul {
-  margin: 0;
-  padding-left: 20px;
-  color: #64748b;
-}
-
-.info-content li {
-  margin-bottom: 4px;
-  line-height: 1.5;
-}
-
-.completion-chain {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin: 16px 0;
-}
-
-.chain-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.chain-text {
-  font-size: 14px;
-  color: #64748b;
-}
-
-.chain-status {
-  font-size: 12px;
-  font-weight: 600;
-  color: #059669;
-  background: #dcfce7;
-  padding: 2px 8px;
-  border-radius: 12px;
-}
 
 .confirmation-text {
   font-size: 16px;

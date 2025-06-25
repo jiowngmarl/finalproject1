@@ -54,7 +54,7 @@ const proxyPaths = [
   'processInit',
   'materialOutbound',
   'endEq',
-  'qualityInsertList'
+  'qualityInsertList',
   'employee',
   'auth'
 ]

@@ -55,17 +55,12 @@ export default {
           displayName: "menu.제품검사항목 관리",
         },
         {
-<<<<<<< HEAD
-          name: 'defectManagement',
-          displayName: 'menu.불량유형 관리',
-=======
           name: "MaterialInspectionManagement",
           displayName: "menu.자재검사항목 관리",
         },
         {
           name: "defectManagement",
           displayName: "menu.불량유형 관리",
->>>>>>> c325bbc7507fca5cf2899bb5430b1eda651326b9
         },
       ],
     },

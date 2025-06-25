@@ -662,39 +662,40 @@ router.put('/workflow/update-end-time', async (req, res) => {
     
     const work = currentWork[0];
     
-    // 종료 시간 및 관련 데이터 업데이트 (상태 변경 없음)
-    const updateParams = [new Date(end_time)];
+   // 종료 시간 및 관련 데이터 업데이트 (상태 변경 없음)
+    const updateParams = [new Date(end_time), 'p5']; // p5 값 추가
     let updateQuery = `
       UPDATE tablets.work_result_detail
-      SET work_end_time = ?
+      SET work_end_time = ?, 
+          code_value = ?    -- p5 (완료 상태)
     `;
-    
+
     // 선택적 필드들 추가
     if (pass_qty !== undefined) {
       updateQuery += `, pass_qty = ?`;
       updateParams.push(pass_qty);
     }
-    
+
     if (defective_qty !== undefined) {
       updateQuery += `, defective_qty = ?`;
       updateParams.push(defective_qty);
     }
-    
+
     if (manager_id) {
       updateQuery += `, manager_id = ?`;
       updateParams.push(manager_id);
     }
-    
+
     updateQuery += `
       WHERE result_detail = ?
       AND (process_code LIKE '%Process7%' OR process_seq = 7)
     `;
     updateParams.push(result_detail_id);
-    
+
     const result = await packageService.executeQuery(updateQuery, updateParams);
-    
+
     console.log(`종료 시간 업데이트 완료: ${result.affectedRows}건`);
-    
+
     if (result.affectedRows === 0) {
       return res.status(500).json({
         success: false,
