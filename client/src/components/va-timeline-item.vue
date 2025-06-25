@@ -22,9 +22,9 @@
 defineProps({
   date: {
     type: String,
-    default: '',
+    default: "",
   },
-})
+});
 </script>
 
 <style lang="scss" scoped>
@@ -47,7 +47,7 @@ defineProps({
     height: 100%;
 
     &::after {
-      content: '';
+      content: "";
       width: 2px;
       height: 100%;
       background: var(--va-background-border);

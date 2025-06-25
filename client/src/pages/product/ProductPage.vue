@@ -6,9 +6,21 @@
         <!-- 제품 검색 필터 및 테이블 -->
         <div class="product-table">
           <div class="product-filters">
-            <va-input v-model="filters.product_code" label="제품코드" class="filter-input" />
-            <va-input v-model="filters.product_name" label="제품명" class="filter-input" />
-            <va-input v-model="filters.product_stand" label="규격" class="filter-spec-input" />
+            <va-input
+              v-model="filters.product_code"
+              label="제품코드"
+              class="filter-input"
+            />
+            <va-input
+              v-model="filters.product_name"
+              label="제품명"
+              class="filter-input"
+            />
+            <va-input
+              v-model="filters.product_stand"
+              label="규격"
+              class="filter-spec-input"
+            />
           </div>
           <va-data-table
             :items="filteredProducts"
@@ -20,14 +32,17 @@
             <template #cell(select)="{ row }">
               <va-checkbox
                 :model-value="selectedProductCode === row.source.product_code"
-                @update:modelValue="(checked: boolean) => onCheckboxToggle(checked, row.source)"
-                :disabled="selectedProductCode !== null && selectedProductCode !== row.source.product_code"
+                @update:modelValue="
+                  (checked: boolean) => onCheckboxToggle(checked, row.source)
+                "
+                :disabled="
+                  selectedProductCode !== null &&
+                  selectedProductCode !== row.source.product_code
+                "
               />
             </template>
           </va-data-table>
         </div>
-
-         
 
         <!-- 제품 등록 폼 -->
         <div class="product-form">
@@ -37,9 +52,9 @@
           </div>
 
           <!-- 미리보기 이미지 -->
-        <div v-if="previewImage" class="image-preview">
-          <img :src="previewImage" alt="첨부 이미지 미리보기" />
-        </div>
+          <div v-if="previewImage" class="image-preview">
+            <img :src="previewImage" alt="첨부 이미지 미리보기" />
+          </div>
 
           <va-input v-model="form.product_code" label="제품코드" />
           <va-input v-model="form.product_name" label="제품명" />
@@ -64,78 +79,89 @@
 </template>
 
 <script lang="ts" setup>
-import axios from 'axios';
-import { ref, computed, onMounted } from 'vue'
+import axios from "axios";
+import { ref, computed, onMounted } from "vue";
 
 interface Product {
-  product_code: string
-  product_name: string
-  product_pay: string
-  product_atc: string
-  product_gred: string
-  product_stand: string
-  product_perdt: string
-  product_unit: string
-  product_safty: string
-  product_img: string
+  product_code: string;
+  product_name: string;
+  product_pay: string;
+  product_atc: string;
+  product_gred: string;
+  product_stand: string;
+  product_perdt: string;
+  product_unit: string;
+  product_safty: string;
+  product_img: string;
 }
 
-const products = ref<Product[]>([])
+const products = ref<Product[]>([]);
 
 const fetchProducts = async () => {
   try {
-    const res = await axios.get('/product')
-    products.value = res.data
-
+    const res = await axios.get("/product");
+    products.value = res.data;
   } catch (err) {
-    console.log('❌ 제품 목록 조회 실패:', err);
+    console.log("❌ 제품 목록 조회 실패:", err);
   }
-}
+};
 
 const columns = [
-  { key: 'select', label: '선택' },
-  { key: 'product_code', label: '제품코드' },
-  { key: 'product_name', label: '제품명' },
-  { key: 'product_unit', label: '단위' },
-  { key: 'product_stand', label: '규격' },
-]
+  { key: "select", label: "선택" },
+  { key: "product_code", label: "제품코드" },
+  { key: "product_name", label: "제품명" },
+  { key: "product_unit", label: "단위" },
+  { key: "product_stand", label: "규격" },
+];
 
 const filters = ref({
-  product_code: '',
-  product_name: '',
-  product_stand: '',
-})
+  product_code: "",
+  product_name: "",
+  product_stand: "",
+});
 
-const page = ref(1)
+const page = ref(1);
 
 const filteredProducts = computed(() => {
-  return products.value.filter((p) =>
-    (!filters.value.product_code || p.product_code.includes(filters.value.product_code)) &&
-    (!filters.value.product_name || p.product_name.includes(filters.value.product_name)) &&
-    (!filters.value.product_stand || p.product_stand.includes(filters.value.product_stand))
-  )
-})
+  return products.value.filter(
+    (p) =>
+      (!filters.value.product_code ||
+        p.product_code.includes(filters.value.product_code)) &&
+      (!filters.value.product_name ||
+        p.product_name.includes(filters.value.product_name)) &&
+      (!filters.value.product_stand ||
+        p.product_stand.includes(filters.value.product_stand)),
+  );
+});
 
 const form = ref({
-  product_code: '',
-  product_name: '',
-  product_pay: '',
-  product_atc: '',
-  product_gred: '',
-  product_stand: '',
-  product_perdt: '',
-  product_unit: '',
-  product_safty: '',
-  product_img: '', // 이미지 이름 저장
-})
+  product_code: "",
+  product_name: "",
+  product_pay: "",
+  product_atc: "",
+  product_gred: "",
+  product_stand: "",
+  product_perdt: "",
+  product_unit: "",
+  product_safty: "",
+  product_img: "", // 이미지 이름 저장
+});
 
 const previewImage = ref<string | null>(null);
 const imageFile = ref<File | null>(null);
 
 function resetForm() {
   form.value = {
-    product_code: '', product_name: '', product_pay: '', product_atc: '', product_gred: '', product_stand: '',
-    product_perdt: '', product_unit: '', product_safty: '', product_img: ''
+    product_code: "",
+    product_name: "",
+    product_pay: "",
+    product_atc: "",
+    product_gred: "",
+    product_stand: "",
+    product_perdt: "",
+    product_unit: "",
+    product_safty: "",
+    product_img: "",
   };
   previewImage.value = null;
   imageFile.value = null;
@@ -157,71 +183,70 @@ function onImageChange(event: Event) {
 
 async function registerProduct() {
   if (!form.value.product_code || !form.value.product_name) {
-    alert('필수값 누락')
+    alert("필수값 누락");
     return;
   }
 
   const formData = new FormData();
 
-  for (const key in form.value) {
-    formData.append(key, (form.value as any)[key]);
-  } 
-
-  if(imageFile.value){
-    formData.append('image',imageFile.value);
-  }
-
-  try{
-    const res = await axios.post('/product', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-
-    if(res.data.isSuccessed == true) {
-      alert('등록완료!');
-      await fetchProducts();
-      resetForm();
-    }else{
-      alert('등록 실패!');
-    }
-  } catch(err){
-    console.log('오류 발생:', err);
-    alert('서버 오류!');
-  }
-}
-
-
-async function updateProduct() {
-  const code = form.value.product_code.trim();
-  if (!code) {
-    alert('제품코드가 없습니다. 수정할 수 없습니다.');
-    return;
-  }
-
-  const formData = new FormData();
-  
   for (const key in form.value) {
     formData.append(key, (form.value as any)[key]);
   }
 
   if (imageFile.value) {
-    formData.append('image', imageFile.value);
+    formData.append("image", imageFile.value);
+  }
+
+  try {
+    const res = await axios.post("/product", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    if (res.data.isSuccessed == true) {
+      alert("등록완료!");
+      await fetchProducts();
+      resetForm();
+    } else {
+      alert("등록 실패!");
+    }
+  } catch (err) {
+    console.log("오류 발생:", err);
+    alert("서버 오류!");
+  }
+}
+
+async function updateProduct() {
+  const code = form.value.product_code.trim();
+  if (!code) {
+    alert("제품코드가 없습니다. 수정할 수 없습니다.");
+    return;
+  }
+
+  const formData = new FormData();
+
+  for (const key in form.value) {
+    formData.append(key, (form.value as any)[key]);
+  }
+
+  if (imageFile.value) {
+    formData.append("image", imageFile.value);
   }
 
   try {
     const res = await axios.put(`/product/${code}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      headers: { "Content-Type": "multipart/form-data" },
     });
 
     if (res.data.isUpdated === true) {
-      alert('수정 완료!');
+      alert("수정 완료!");
       await fetchProducts();
       resetForm();
     } else {
-      alert('수정 실패!');
+      alert("수정 실패!");
     }
   } catch (err) {
-    console.error('❌ 수정 오류:', err);
-    alert('서버 오류!');
+    console.error("❌ 수정 오류:", err);
+    alert("서버 오류!");
   }
 }
 
@@ -229,31 +254,31 @@ async function deleteProduct() {
   const trimmedCode = form.value.product_code.trim();
 
   if (!trimmedCode) {
-    alert('제품코드가 없습니다. 삭제할 수 없습니다.');
+    alert("제품코드가 없습니다. 삭제할 수 없습니다.");
     return;
   }
 
   if (!confirm(`정말로 ${trimmedCode} 제품을 삭제하시겠습니까?`)) {
     return;
   }
-  
+
   try {
-  const res = await axios.delete(`/product/${trimmedCode}`);
+    const res = await axios.delete(`/product/${trimmedCode}`);
 
     if (res.data.isDeleted == true) {
-      alert('삭제 완료!');
+      alert("삭제 완료!");
       await fetchProducts();
       resetForm();
     } else {
-      alert('삭제 실패! (해당 제품이 존재하지 않거나 이미 삭제됨)');
+      alert("삭제 실패! (해당 제품이 존재하지 않거나 이미 삭제됨)");
     }
   } catch (err) {
-    console.error('❌ 삭제 중 오류 발생:', err);
-    alert('서버 오류!');
+    console.error("❌ 삭제 중 오류 발생:", err);
+    alert("서버 오류!");
   }
 }
 
-const selectedProductCode = ref<string | null>(null)
+const selectedProductCode = ref<string | null>(null);
 
 function onCheckboxToggle(checked: boolean, row: Product) {
   if (checked) {
@@ -265,10 +290,9 @@ function onCheckboxToggle(checked: boolean, row: Product) {
   }
 }
 
-
-onMounted(() =>{
-  fetchProducts()
-})
+onMounted(() => {
+  fetchProducts();
+});
 </script>
 
 <style scoped>
@@ -276,7 +300,7 @@ onMounted(() =>{
   padding: 1.5rem;
   display: flex;
   justify-content: center;
-   height: 739px;
+  height: 739px;
 }
 
 .product-container {

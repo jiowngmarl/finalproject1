@@ -1,18 +1,18 @@
-import BillingAddressCreateModal from './BillingAddressCreateModal.vue'
+import BillingAddressCreateModal from "./BillingAddressCreateModal.vue";
 
 export default {
   components: { BillingAddressCreateModal },
-  title: 'BillingAddressCreateModal',
+  title: "BillingAddressCreateModal",
   component: BillingAddressCreateModal,
-  tags: ['autodocs'],
-}
+  tags: ["autodocs"],
+};
 
 export const Default = () => ({
   components: { BillingAddressCreateModal },
   data() {
     return {
       showModal: false,
-    }
+    };
   },
   template: `
     <va-button @click="showModal = !showModal">
@@ -20,4 +20,4 @@ export const Default = () => ({
     </va-button>
     <BillingAddressCreateModal v-if="showModal" @close="showModal = false"/>
   `,
-})
+});

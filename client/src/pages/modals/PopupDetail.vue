@@ -3,15 +3,19 @@
     <div class="popup-content wide">
       <div class="popup-header">
         <div>
-          <button class="btn add" @click="materialSearchVisible = true">재료추가</button>
-          <button class="btn delete" @click="$emit('deleteSelectedMaterials')">재료삭제</button>
+          <button class="btn add" @click="materialSearchVisible = true">
+            재료추가
+          </button>
+          <button class="btn delete" @click="$emit('deleteSelectedMaterials')">
+            재료삭제
+          </button>
         </div>
       </div>
 
       <table class="material-table">
         <thead>
           <tr>
-            <th><input type="checkbox" disabled/></th>
+            <th><input type="checkbox" disabled /></th>
             <th>자재코드</th>
             <th>자재명</th>
             <th>단위</th>
@@ -23,9 +27,16 @@
           <tr v-for="(row, index) in materialList" :key="index">
             <td><input type="checkbox" v-model="row.selected" /></td>
             <td>
-              <select v-model="row.material_code" @change="$emit('materialCodeChange', row)">
+              <select
+                v-model="row.material_code"
+                @change="$emit('materialCodeChange', row)"
+              >
                 <option disabled value="">자재 선택</option>
-                <option v-for="item in materialOptions" :key="item.material_code" :value="item.material_code">
+                <option
+                  v-for="item in materialOptions"
+                  :key="item.material_code"
+                  :value="item.material_code"
+                >
                   {{ item.material_code }}
                 </option>
               </select>
@@ -40,7 +51,9 @@
 
       <div class="popup-footer">
         <button class="btn save" @click="$emit('save')">저장</button>
-        <button class="btn" @click="$emit('update:visible', false)">취소</button>
+        <button class="btn" @click="$emit('update:visible', false)">
+          취소
+        </button>
       </div>
 
       <MaterialAddPopup
@@ -55,24 +68,28 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, ref } from 'vue'
-import MaterialAddPopup from '../modals/MaterialAddPopup.vue'
-import type { MaterialRow, MaterialOption } from '@/types'
+import { defineProps, defineEmits, ref } from "vue";
+import MaterialAddPopup from "../modals/MaterialAddPopup.vue";
+import type { MaterialRow, MaterialOption } from "@/types";
 
 const props = defineProps<{
-  visible: boolean
-  processCode: string
-  productCode: string
-  materialOptions: MaterialOption[]
-  materialList: MaterialRow[]
-  bomCode: string
-}>()
+  visible: boolean;
+  processCode: string;
+  productCode: string;
+  materialOptions: MaterialOption[];
+  materialList: MaterialRow[];
+  bomCode: string;
+}>();
 
 const emit = defineEmits([
-  'update:visible', 'save', 'materialCodeChange', 'addMaterial', 'deleteSelectedMaterials'
-])
+  "update:visible",
+  "save",
+  "materialCodeChange",
+  "addMaterial",
+  "deleteSelectedMaterials",
+]);
 
-const materialSearchVisible = ref(false)
+const materialSearchVisible = ref(false);
 
 function handleMaterialAdd(selected: MaterialOption[]) {
   for (const item of selected) {
@@ -83,9 +100,9 @@ function handleMaterialAdd(selected: MaterialOption[]) {
       material_unit: item.material_unit,
       BOM_code: props.bomCode,
       usage_qty: item.usage_qty ?? 0,
-      responsible: '',
-      selected: false
-    })
+      responsible: "",
+      selected: false,
+    });
   }
 }
 </script>

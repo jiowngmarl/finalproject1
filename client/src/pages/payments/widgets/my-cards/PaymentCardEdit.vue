@@ -6,7 +6,11 @@
       class="mb-4"
       label="Card Name"
     />
-    <VaCheckbox v-model="paymentCardLocal.isPrimary" class="mb-4" label="Primary Card" />
+    <VaCheckbox
+      v-model="paymentCardLocal.isPrimary"
+      class="mb-4"
+      label="Primary Card"
+    />
     <VaSelect
       v-model="paymentCardLocal.paymentSystem"
       :options="paymentSystemTypeOptions"
@@ -37,42 +41,47 @@
     />
 
     <div class="flex justify-end gap-3">
-      <VaButton color="secondary" preset="secondary" @click="emits('cancel')">Cancel</VaButton>
+      <VaButton color="secondary" preset="secondary" @click="emits('cancel')"
+        >Cancel</VaButton
+      >
       <VaButton @click="submit">{{ submitText }}</VaButton>
     </div>
   </VaForm>
 </template>
 
 <script lang="ts" setup>
-import { useForm } from 'vuestic-ui'
-import { PaymentCard, PaymentSystemType } from '../../types'
-import { watch, ref } from 'vue'
+import { useForm } from "vuestic-ui";
+import { PaymentCard, PaymentSystemType } from "../../types";
+import { watch, ref } from "vue";
 
-const { validate } = useForm('form')
-const emits = defineEmits(['save', 'cancel'])
+const { validate } = useForm("form");
+const emits = defineEmits(["save", "cancel"]);
 
 const props = defineProps<{
-  paymentCard: PaymentCard
-  submitText: string
-}>()
+  paymentCard: PaymentCard;
+  submitText: string;
+}>();
 
-const paymentSystemTypeOptions = Object.values(PaymentSystemType)
-const paymentCardLocal = ref({ ...props.paymentCard })
+const paymentSystemTypeOptions = Object.values(PaymentSystemType);
+const paymentCardLocal = ref({ ...props.paymentCard });
 
 watch(
   () => props.paymentCard,
   (value) => {
-    paymentCardLocal.value = { ...value }
+    paymentCardLocal.value = { ...value };
   },
   { deep: true },
-)
+);
 
 const submit = () => {
   if (validate()) {
-    emits('save', {
+    emits("save", {
       ...paymentCardLocal.value,
-      cardNumberMasked: paymentCardLocal.value.cardNumberMasked.replace(/\d{12}(.*)/g, '****$1'),
-    })
+      cardNumberMasked: paymentCardLocal.value.cardNumberMasked.replace(
+        /\d{12}(.*)/g,
+        "****$1",
+      ),
+    });
   }
-}
+};
 </script>

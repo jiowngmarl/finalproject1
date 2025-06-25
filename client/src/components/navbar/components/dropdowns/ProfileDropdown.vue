@@ -2,18 +2,22 @@
   <div class="profile-dropdown-wrapper">
     <VaDropdown v-model="isShown" class="profile-dropdown" stick-to-edges>
       <template #anchor>
-        <VaButton preset="secondary" color="textPrimary" class="profile-dropdown__button">
+        <VaButton
+          preset="secondary"
+          color="textPrimary"
+          class="profile-dropdown__button"
+        >
           <span class="profile-dropdown__anchor">
-            <VaAvatar 
-              v-if="authStore.isLoggedIn && authStore.user?.profile_img" 
-              :src="authStore.user.profile_img" 
-              :size="14" 
+            <VaAvatar
+              v-if="authStore.isLoggedIn && authStore.user?.profile_img"
+              :src="authStore.user.profile_img"
+              :size="14"
               class="mr-1"
             />
-            <VaIcon 
-              v-else 
-              :name="authStore.isLoggedIn ? 'account_circle' : 'person'" 
-              class="mr-1" 
+            <VaIcon
+              v-else
+              :name="authStore.isLoggedIn ? 'account_circle' : 'person'"
+              class="mr-1"
               size="14"
             />
             {{ authStore.displayName }}
@@ -21,25 +25,37 @@
           </span>
         </VaButton>
       </template>
-      
+
       <VaDropdownContent
         class="profile-dropdown__content w-50 p-0 m-0"
-        :style="{ 
-          '--hover-color': hoverColor, 
-          'height': 'auto', 
+        :style="{
+          '--hover-color': hoverColor,
+          height: 'auto',
           'min-height': '40px',
           'max-height': '50px',
-          'overflow': 'visible',
-          'padding': '0',
-          'margin': '0'
+          overflow: 'visible',
+          padding: '0',
+          margin: '0',
         }"
       >
         <!-- 로그인된 상태 -->
         <template v-if="authStore.isLoggedIn">
           <!-- 로그아웃 버튼만 (큰 크기) -->
-          <div 
+          <div
             class="menu-item cursor-pointer hover:bg-gray-50 flex items-center justify-center"
-            style="font-size: 16px; line-height: 1.2; gap: 8px; white-space: nowrap; height: 40px; min-height: 40px; padding: 8px 16px; margin: 0; display: flex !important; align-items: center !important; justify-content: center !important;"
+            style="
+              font-size: 16px;
+              line-height: 1.2;
+              gap: 8px;
+              white-space: nowrap;
+              height: 40px;
+              min-height: 40px;
+              padding: 8px 16px;
+              margin: 0;
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+            "
             @click="handleLogout"
           >
             <VaIcon name="logout" size="18" color="secondary" />
@@ -51,7 +67,19 @@
         <template v-else>
           <div
             class="menu-item cursor-pointer hover:bg-gray-50 flex items-center justify-center"
-            style="font-size: 16px; line-height: 1.2; gap: 8px; white-space: nowrap; height: 40px; min-height: 40px; padding: 8px 16px; margin: 0; display: flex !important; align-items: center !important; justify-content: center !important;"
+            style="
+              font-size: 16px;
+              line-height: 1.2;
+              gap: 8px;
+              white-space: nowrap;
+              height: 40px;
+              min-height: 40px;
+              padding: 8px 16px;
+              margin: 0;
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+            "
             @click="goToLogin"
           >
             <VaIcon name="login" size="18" color="primary" />
@@ -64,36 +92,36 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue'
-import { useColors } from 'vuestic-ui'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
+import { ref, computed } from "vue";
+import { useColors } from "vuestic-ui";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/authStore";
 
 // ================================
 // 🔧 컴포넌트 설정
 // ================================
-const { colors, setHSLAColor } = useColors()
-const hoverColor = computed(() => setHSLAColor(colors.focus, { a: 0.1 }))
-const router = useRouter()
+const { colors, setHSLAColor } = useColors();
+const hoverColor = computed(() => setHSLAColor(colors.focus, { a: 0.1 }));
+const router = useRouter();
 
 // ================================
 // 🎯 상태 관리 (Pinia 스토어 사용)
 // ================================
-const authStore = useAuthStore()
-const isShown = ref(false)
+const authStore = useAuthStore();
+const isShown = ref(false);
 
 // ================================
 // 🚪 네비게이션 함수들
 // ================================
 const goToLogin = () => {
-  isShown.value = false
-  router.push({ name: 'login' })
-}
+  isShown.value = false;
+  router.push({ name: "login" });
+};
 
 const handleLogout = async () => {
-  isShown.value = false
-  await authStore.logout(router)  // router를 매개변수로 전달
-}
+  isShown.value = false;
+  await authStore.logout(router); // router를 매개변수로 전달
+};
 </script>
 
 <style lang="scss">
@@ -118,7 +146,7 @@ const handleLogout = async () => {
     min-height: 40px !important;
     height: auto !important;
     max-height: 50px !important;
-    
+
     /* 강력한 선택자로 모든 VaDropdown 요소 제어 */
     &,
     & > *,
@@ -134,7 +162,7 @@ const handleLogout = async () => {
       height: auto !important;
       line-height: 1.2 !important;
     }
-    
+
     .menu-item {
       transition: background-color 0.1s !important;
       margin: 0 !important;
@@ -150,7 +178,7 @@ const handleLogout = async () => {
       visibility: visible !important;
       opacity: 1 !important;
       font-size: 16px !important;
-      
+
       &:hover {
         background-color: #f1f5f9 !important;
       }
@@ -189,7 +217,7 @@ const handleLogout = async () => {
     height: auto !important;
     max-height: 60px !important;
     overflow: visible !important;
-    
+
     .va-dropdown-content__content {
       min-height: 50px !important;
       height: auto !important;

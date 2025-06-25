@@ -1,28 +1,38 @@
 <template>
-  <component :is="chartComponent" :chart-data="data" :data="data" :options="chartOptions" class="va-chart" />
+  <component
+    :is="chartComponent"
+    :chart-data="data"
+    :data="data"
+    :options="chartOptions"
+    class="va-chart"
+  />
 </template>
 
-<script lang="ts" setup generic="T extends 'line' | 'bar' | 'bubble' | 'doughnut' | 'pie'">
-import { computed } from 'vue'
-import type { ChartOptions, ChartData, ChartComponent } from 'chart.js'
-import { defaultConfig, chartTypesMap } from './vaChartConfigs'
+<script
+  lang="ts"
+  setup
+  generic="T extends 'line' | 'bar' | 'bubble' | 'doughnut' | 'pie'"
+>
+import { computed } from "vue";
+import type { ChartOptions, ChartData, ChartComponent } from "chart.js";
+import { defaultConfig, chartTypesMap } from "./vaChartConfigs";
 
 defineOptions({
-  name: 'VaChart',
-})
+  name: "VaChart",
+});
 
 const props = defineProps<{
-  data: ChartData<T>
-  options?: ChartOptions<T>
-  type: T
-}>()
+  data: ChartData<T>;
+  options?: ChartOptions<T>;
+  type: T;
+}>();
 
-const chartComponent = chartTypesMap[props.type] as unknown as ChartComponent
+const chartComponent = chartTypesMap[props.type] as unknown as ChartComponent;
 
 const chartOptions = computed<ChartOptions<T>>(() => ({
   ...(defaultConfig as any),
   ...props.options,
-}))
+}));
 </script>
 
 <style lang="scss">

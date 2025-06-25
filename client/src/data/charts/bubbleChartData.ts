@@ -1,10 +1,10 @@
-import { TBubbleChartData } from '../types'
+import { TBubbleChartData } from "../types";
 
 export const bubbleChartData: TBubbleChartData = {
   datasets: [
     {
-      label: 'USA',
-      backgroundColor: 'danger',
+      label: "USA",
+      backgroundColor: "danger",
       data: [
         {
           x: 23,
@@ -49,8 +49,8 @@ export const bubbleChartData: TBubbleChartData = {
       ],
     },
     {
-      label: 'Russia',
-      backgroundColor: 'primary',
+      label: "Russia",
+      backgroundColor: "primary",
       data: [
         {
           x: 0,
@@ -95,8 +95,8 @@ export const bubbleChartData: TBubbleChartData = {
       ],
     },
     {
-      label: 'Canada',
-      backgroundColor: 'warning',
+      label: "Canada",
+      backgroundColor: "warning",
       data: [
         {
           x: 10,
@@ -136,8 +136,8 @@ export const bubbleChartData: TBubbleChartData = {
       ],
     },
     {
-      label: 'Belarus',
-      backgroundColor: 'info',
+      label: "Belarus",
+      backgroundColor: "info",
       data: [
         {
           x: 35,
@@ -182,8 +182,8 @@ export const bubbleChartData: TBubbleChartData = {
       ],
     },
     {
-      label: 'Ukraine',
-      backgroundColor: 'success',
+      label: "Ukraine",
+      backgroundColor: "success",
       data: [
         {
           x: 25,
@@ -228,4 +228,4 @@ export const bubbleChartData: TBubbleChartData = {
       ],
     },
   ],
-}
+};

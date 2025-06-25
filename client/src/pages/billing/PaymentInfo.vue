@@ -10,16 +10,18 @@
           <div class="md:w-48">
             <p class="mb-1">Payment plan</p>
             <p class="font-bold">
-              {{ paymentPlan.isYearly ? paymentPlan.priceYear : paymentPlan.priceMonth }}&nbsp;/{{
-                paymentPlan.isYearly ? 'yearly' : 'monthly'
-              }}
+              {{
+                paymentPlan.isYearly
+                  ? paymentPlan.priceYear
+                  : paymentPlan.priceMonth
+              }}&nbsp;/{{ paymentPlan.isYearly ? "yearly" : "monthly" }}
             </p>
           </div>
         </div>
 
         <div class="md:w-48 flex flex-col justify-end items-end">
           <VaButton preset="primary" @click="togglePaymentPlanModal">
-            Switch to {{ paymentPlan.isYearly ? 'monthly' : 'annual' }}
+            Switch to {{ paymentPlan.isYearly ? "monthly" : "annual" }}
           </VaButton>
 
           <div v-if="!paymentPlan.isYearly" class="mt-2 text-regularSmall">
@@ -38,11 +40,16 @@
           >
             <div class="md:w-48">
               <p class="mb-1">Payment method</p>
-              <p class="font-bold capitalize">{{ paymentCard.paymentSystem }} {{ paymentCard.cardNumberMasked }}</p>
+              <p class="font-bold capitalize">
+                {{ paymentCard.paymentSystem }}
+                {{ paymentCard.cardNumberMasked }}
+              </p>
             </div>
           </div>
           <div class="md:w-48 flex justify-end">
-            <VaButton :to="{ name: 'payment-methods' }" preset="primary">Payment preferences</VaButton>
+            <VaButton :to="{ name: 'payment-methods' }" preset="primary"
+              >Payment preferences</VaButton
+            >
           </div>
         </div>
       </template>
@@ -58,35 +65,36 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
-import { usePaymentCardsStore } from '../../stores/payment-cards'
+import { computed, ref } from "vue";
+import { usePaymentCardsStore } from "../../stores/payment-cards";
 
-import ChangeYourPaymentPlan from './modals/ChangeYourPaymentPlan.vue'
+import ChangeYourPaymentPlan from "./modals/ChangeYourPaymentPlan.vue";
 
 const paymentPlan = ref({
-  id: '1',
-  name: 'Gold',
+  id: "1",
+  name: "Gold",
   isYearly: false,
-  type: 'current',
+  type: "current",
   padletsUsed: 19,
-  padletsTotal: '20',
-  priceMonth: '$6.99',
-  priceYear: '$69.99',
-  switchToYearlySave: '16%',
-  uploadLimit: '100MB',
-})
+  padletsTotal: "20",
+  priceMonth: "$6.99",
+  priceYear: "$69.99",
+  switchToYearlySave: "16%",
+  uploadLimit: "100MB",
+});
 
-const cardStore = usePaymentCardsStore()
+const cardStore = usePaymentCardsStore();
 
-const isChangeYourPaymentPlanModalOpen = ref(false)
+const isChangeYourPaymentPlanModalOpen = ref(false);
 
-const paymentCard = computed(() => cardStore.currentPaymentCard)
+const paymentCard = computed(() => cardStore.currentPaymentCard);
 const togglePaymentPlanModal = () => {
-  isChangeYourPaymentPlanModalOpen.value = !isChangeYourPaymentPlanModalOpen.value
-}
+  isChangeYourPaymentPlanModalOpen.value =
+    !isChangeYourPaymentPlanModalOpen.value;
+};
 
 const updatePaymentPlan = () => {
-  paymentPlan.value.isYearly = !paymentPlan.value.isYearly
-  isChangeYourPaymentPlanModalOpen.value = false
-}
+  paymentPlan.value.isYearly = !paymentPlan.value.isYearly;
+  isChangeYourPaymentPlanModalOpen.value = false;
+};
 </script>

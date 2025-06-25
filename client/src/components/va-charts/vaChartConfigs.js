@@ -1,6 +1,6 @@
-import { defineAsyncComponent, markRaw } from 'vue'
+import { defineAsyncComponent, markRaw } from "vue";
 
-const DEFAULT_FONT_FAMILY = "'Inter', sans-serif"
+const DEFAULT_FONT_FAMILY = "'Inter', sans-serif";
 
 export const defaultConfig = {
   scales: {
@@ -21,10 +21,10 @@ export const defaultConfig = {
   },
   plugins: {
     legend: {
-      position: 'bottom',
+      position: "bottom",
       labels: {
         font: {
-          color: '#34495e',
+          color: "#34495e",
           family: DEFAULT_FONT_FAMILY,
           size: 14,
         },
@@ -41,23 +41,23 @@ export const defaultConfig = {
   },
   datasets: {
     line: {
-      fill: 'origin',
+      fill: "origin",
       tension: 0.3,
-      borderColor: 'transparent',
+      borderColor: "transparent",
     },
     bubble: {
-      borderColor: 'transparent',
+      borderColor: "transparent",
     },
     bar: {
-      borderColor: 'transparent',
+      borderColor: "transparent",
     },
   },
   maintainAspectRatio: false,
   animation: true,
-}
+};
 
 export const doughnutConfig = {
-  cutout: '80%',
+  cutout: "80%",
   scales: {
     x: {
       display: false,
@@ -82,26 +82,38 @@ export const doughnutConfig = {
   },
   datasets: {
     line: {
-      fill: 'origin',
+      fill: "origin",
       tension: 0.3,
-      borderColor: 'transparent',
+      borderColor: "transparent",
     },
     bubble: {
-      borderColor: 'transparent',
+      borderColor: "transparent",
     },
     bar: {
-      borderColor: 'transparent',
+      borderColor: "transparent",
     },
   },
   maintainAspectRatio: false,
   animation: true,
-}
+};
 
 export const chartTypesMap = {
-  pie: markRaw(defineAsyncComponent(() => import('./chart-types/PieChart.vue'))),
-  doughnut: markRaw(defineAsyncComponent(() => import('./chart-types/DoughnutChart.vue'))),
-  bubble: markRaw(defineAsyncComponent(() => import('./chart-types/BubbleChart.vue'))),
-  line: markRaw(defineAsyncComponent(() => import('./chart-types/LineChart.vue'))),
-  bar: markRaw(defineAsyncComponent(() => import('./chart-types/BarChart.vue'))),
-  'horizontal-bar': markRaw(defineAsyncComponent(() => import('./chart-types/HorizontalBarChart.vue'))),
-}
+  pie: markRaw(
+    defineAsyncComponent(() => import("./chart-types/PieChart.vue")),
+  ),
+  doughnut: markRaw(
+    defineAsyncComponent(() => import("./chart-types/DoughnutChart.vue")),
+  ),
+  bubble: markRaw(
+    defineAsyncComponent(() => import("./chart-types/BubbleChart.vue")),
+  ),
+  line: markRaw(
+    defineAsyncComponent(() => import("./chart-types/LineChart.vue")),
+  ),
+  bar: markRaw(
+    defineAsyncComponent(() => import("./chart-types/BarChart.vue")),
+  ),
+  "horizontal-bar": markRaw(
+    defineAsyncComponent(() => import("./chart-types/HorizontalBarChart.vue")),
+  ),
+};
