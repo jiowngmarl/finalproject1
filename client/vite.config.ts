@@ -52,7 +52,8 @@ const proxyPaths = [
   'workResultStatus',
   'processInit',
   'materialOutbound',
-  'endEq'
+  'endEq',
+  'qualityInsertList'
 ]
 
 // ✅ 공통 proxy 설정 생성 함수

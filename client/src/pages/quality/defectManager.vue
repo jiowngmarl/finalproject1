@@ -14,7 +14,6 @@
     <div class="form-buttons">
       <va-button @click="insertDefect" color="primary">등록</va-button>
       <va-button @click="resetForm" color="secondary">초기화</va-button>
-      <va-button @click="deletDefect" color="danger">삭제</va-button>
     </div>
   </div>
    <!-- 하단 데이터 리스트 -->
