@@ -11,8 +11,28 @@ const routes: Array<RouteRecordRaw> = [
     redirect: { name: "dashboard" },
   },
   {
+<<<<<<< HEAD
     path: "/auth",
     component: AuthLayout,
+=======
+  path: '/auth',
+  component: AuthLayout,
+  children: [
+    {
+      path: 'login',
+      name: 'login',
+      component: () => import('../pages/auth/Login.vue'),
+    },
+    
+  ],
+},
+
+  {
+    name: 'admin',
+    path: '/',
+    component: AppLayout,
+    redirect: { name: 'dashboard' },
+>>>>>>> main
     children: [
       {
         path: "login",
@@ -334,4 +354,8 @@ const router = createRouter({
   routes,
 });
 
+<<<<<<< HEAD
 export default router;
+=======
+export default router
+>>>>>>> main

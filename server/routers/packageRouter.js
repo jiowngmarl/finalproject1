@@ -19,7 +19,7 @@ router.get('/health', (req, res) => {
 // 작업번호 조회 API (p1,p3,p5 3단계)
 // ==============================================
 
-// 내포장 라인별 작업번호 조회
+// 내포장 라인별 작업번호 조회두
 router.get('/works/inner/:lineId', async (req, res) => {
   try {
     const { lineId } = req.params;
@@ -666,8 +666,14 @@ router.put('/workflow/update-end-time', async (req, res) => {
     const updateParams = [new Date(end_time), 'p5']; // p5 값 추가
     let updateQuery = `
       UPDATE tablets.work_result_detail
+<<<<<<< HEAD
       SET work_end_time = ?, 
           code_value = ?    -- p5 (완료 상태)
+=======
+      SET work_end_time = ?,
+          code_value = "p4"
+
+>>>>>>> main
     `;
 
     // 선택적 필드들 추가
