@@ -55,7 +55,9 @@ const proxyPaths = [
   'endEq',
   'qualityInsertList'
   'employee',
-  'auth'
+  'auth',
+  'faultyDisuses',
+  'qualityInsertLists'
 ]
 
 // ✅ 공통 proxy 설정 생성 함수

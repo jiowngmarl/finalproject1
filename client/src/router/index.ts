@@ -19,6 +19,7 @@ const routes: Array<RouteRecordRaw> = [
       name: 'login',
       component: () => import('../pages/auth/Login.vue'),
     },
+    
   ],
 },
 

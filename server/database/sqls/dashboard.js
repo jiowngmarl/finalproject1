@@ -14,28 +14,26 @@ module.exports = {
 
   // 설비 효율 조회 (현재 가동률) - common_code 조인 버전
   dashboardEquipmentEfficiency: `
-    SELECT 
+      SELECT 
       CASE 
         WHEN COUNT(*) > 0 THEN 
           COALESCE(ROUND((
-            COUNT(CASE WHEN eq.eq_run_code = 's1' THEN 1 END) * 100.0 / COUNT(*)
+            COUNT(CASE WHEN eq.eq_run_code = 's2' THEN 1 END) * 100.0 / COUNT(*)
           ), 0), 0)
         ELSE 75 
       END as efficiency
     FROM equipment eq
-    LEFT JOIN common_code cc ON eq.eq_run_code = cc.code_value AND cc.code_group = '0A'
     WHERE eq.eq_run_code IS NOT NULL
   `,
 
   // 설비 가동률 월별 추이 (최근 6개월) - 월 정보 포함
   dashboardEquipmentMonthly: `
-    SELECT 
+     SELECT 
       MONTH(CURDATE()) as month,
       COALESCE(ROUND((
-        COUNT(CASE WHEN eq.eq_run_code = 's1' THEN 1 END) * 100.0 / COUNT(*)
+        COUNT(CASE WHEN eq.eq_run_code = 's2' THEN 1 END) * 100.0 / COUNT(*)
       ), 0), 75) as efficiency
     FROM equipment eq
-    LEFT JOIN common_code cc ON eq.eq_run_code = cc.code_value AND cc.code_group = '0A'
     WHERE eq.eq_run_code IS NOT NULL
     
     UNION ALL
