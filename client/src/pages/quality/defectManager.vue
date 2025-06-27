@@ -3,52 +3,39 @@
     <h3 class="form-title">불량항목 등록</h3>
     <br />
 
-    <!-- 상단 입력박스 -->
-    <div class="form-section">
-      <div class="input-row">
-        <va-input
-          v-model="form.defectTypeCode"
-          label="불량유형코드"
-          class="quarter-width"
-          :readonly="isEditMode"
-        />
-        <va-input
-          v-model="form.defectTypeName"
-          label="불량명"
-          class="quarter-width"
-        />
-        <va-input v-model="form.defectremark" label="비고" class="half-width" />
-      </div>
-      <div class="form-buttons">
-        <va-button @click="insertDefect" color="primary">등록</va-button>
-        <va-button @click="resetForm" color="secondary">초기화</va-button>
-        <va-button @click="deletDefect" color="danger">삭제</va-button>
-      </div>
+  <!-- 상단 입력박스 -->
+  <div class="form-section">
+    <div class="input-row">
+      <va-input v-model="form.defectTypeCode" label="불량유형코드" class="quarter-width" :readonly="isEditMode"/>
+      <va-input v-model="form.defectTypeName" label="불량명" class="quarter-width"/>
+      <va-input v-model="form.defectremark" label="비고" class="half-width"/>
     </div>
-    <!-- 하단 데이터 리스트 -->
-    <div class="form-section">
-      <table class="custom-table">
-        <thead>
-          <tr>
-            <th>불량유형코드</th>
-            <th>불량명</th>
-            <th>비고</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="(item, index) in defectList"
-            :key="item.defect_type_code"
-            @click="selectItem(item)"
-          >
-            <td>{{ item.defect_type_code }}</td>
-            <td>{{ item.defect_type_name }}</td>
-            <td>{{ item.defect_type_remark }}</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="form-buttons">
+      <va-button @click="insertDefect" color="primary">등록</va-button>
+      <va-button @click="resetForm" color="secondary">초기화</va-button>
+      <va-button @click="deletDefect" color="danger">삭제</va-button>
     </div>
   </div>
+   <!-- 하단 데이터 리스트 -->
+  <div class="form-section">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>불량유형코드</th>
+          <th>불량명</th>
+          <th>비고</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(item, index) in defectList" :key="item.defect_type_code" @click="selectItem(item)">
+          <td>{{ item.defect_type_code }}</td>
+          <td>{{ item.defect_type_name }}</td>
+          <td>{{ item.defect_type_remark }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 </template>
 
 <script lang="ts" setup>

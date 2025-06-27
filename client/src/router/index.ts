@@ -11,16 +11,16 @@ const routes: Array<RouteRecordRaw> = [
     redirect: { name: "dashboard" },
   },
   {
-    path: "/auth",
-    component: AuthLayout,
-    children: [
-      {
-        path: "login",
-        name: "login",
-        component: () => import("../pages/auth/Login.vue"),
-      },
-    ],
-  },
+  path: '/auth',
+  component: AuthLayout,
+  children: [
+    {
+      path: 'login',
+      name: 'login',
+      component: () => import('../pages/auth/Login.vue'),
+    },
+  ],
+},
 
   {
     name: "admin",
@@ -213,10 +213,10 @@ const routes: Array<RouteRecordRaw> = [
         path: "/faq",
         component: RouteViewComponent,
         children: [
-          {
-            name: "quality-management",
-            path: "quality-management",
-            component: () => import("../pages/quality/QualityListPage.vue"),
+          { 
+            name: 'quality-management',
+            path: 'quality-management',
+            component: () => import('../pages/quality/QualityListPage.vue'),
           },
           {
             name: "faulty-management",
@@ -330,3 +330,5 @@ const router = createRouter({
 });
 
 export default router;
+
+export default router

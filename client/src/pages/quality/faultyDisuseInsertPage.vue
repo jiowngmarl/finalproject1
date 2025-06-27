@@ -93,29 +93,24 @@ onMounted(async () => {
 });
 
 // 제품 선택 시 작업지시서 목록 불러오기
-watch(
-  () => form.value.name,
-  async (newProductCode) => {
-    if (!newProductCode) {
-      workOrderOptions.value = [];
-      form.value.code = "";
-      return;
-    }
-    try {
-      const res = await axios.get("faultyDisuses/workOrderList", {
-        params: { productCode: newProductCode },
-      });
-      workOrderOptions.value = res.data.map((item: any) => ({
-        label: item.work_order_no,
-        value: item.work_order_no,
-      }));
-    } catch (err) {
-      console.error("작업지시서 목록 조회 실패:", err);
-      workOrderOptions.value = [];
-      form.value.code = "";
-    }
-  },
-);
+watch(() => form.value.name, async (newProductCode) => {
+  if (!newProductCode) {
+    workOrderOptions.value = [];
+    form.value.code = '';
+    return;
+  }
+  try {
+    const res = await axios.get('faultyDisuses/workOrderList', { params: { productCode: newProductCode } });
+    workOrderOptions.value = res.data.map((item: any) => ({
+      label: item.work_order_no,
+      value: item.work_order_no,
+    }));
+  } catch (err) {
+    console.error('작업지시서 목록 조회 실패:', err);
+    workOrderOptions.value = [];
+    form.value.code = '';
+  }
+});
 
 watch(
   () => form.value.code,

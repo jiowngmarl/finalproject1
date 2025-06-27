@@ -55,8 +55,8 @@ export default {
           displayName: "menu.제품검사항목 관리",
         },
         {
-          name: "MaterialInspectionManagement",
-          displayName: "menu.자재검사항목 관리",
+          name: 'MaterialInspectionManagement',
+          displayName: 'menu.자재검사항목 관리',
         },
         {
           name: "defectManagement",
@@ -221,8 +221,8 @@ export default {
       },
       children: [
         {
-          name: "quality-management",
-          displayName: "menu.제품품질검사 등록",
+          name: 'quality-management',
+          displayName: 'menu.제품품질검사 등록',
         },
         {
           name: "faulty-management",
