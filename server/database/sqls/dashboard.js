@@ -12,45 +12,6 @@ module.exports = {
       AND order_date IS NOT NULL
   `,
 
-<<<<<<< HEAD
- // 설비 효율 조회 (현재 가동률) - s2 기준으로 수정
-dashboardEquipmentEfficiency: `
-  SELECT 
-    CASE 
-      WHEN COUNT(*) > 0 THEN 
-        COALESCE(ROUND((
-          COUNT(CASE WHEN eq.eq_run_code = 's2' THEN 1 END) * 100.0 / COUNT(*)
-        ), 0), 0)
-      ELSE 75 
-    END as efficiency
-  FROM equipment eq
-  WHERE eq.eq_run_code IS NOT NULL
-`,
-
-
-// 설비 가동률 월별 추이 (최근 6개월) - s2 기준으로 수정
-dashboardEquipmentMonthly: `
-  SELECT 
-    MONTH(CURDATE()) as month,
-    COALESCE(ROUND((
-      COUNT(CASE WHEN eq.eq_run_code = 's2' THEN 1 END) * 100.0 / COUNT(*)
-    ), 0), 75) as efficiency
-  FROM equipment eq
-  WHERE eq.eq_run_code IS NOT NULL
-  
-  UNION ALL
-  
-  -- 이전 월들의 깔끔한 더미 데이터
-  SELECT 1 as month, 85 as efficiency
-  UNION ALL SELECT 2, 82
-  UNION ALL SELECT 3, 88
-  UNION ALL SELECT 4, 90
-  UNION ALL SELECT 5, 87
-  
-  ORDER BY month
-  LIMIT 6
-`,
-=======
   // 설비 효율 조회 (현재 가동률) - common_code 조인 버전
   dashboardEquipmentEfficiency: `
       SELECT 
@@ -87,7 +48,6 @@ dashboardEquipmentMonthly: `
     ORDER BY month
     LIMIT 6
   `,
->>>>>>> main
 
   // 월별 생산량 추이 (더 간단한 버전)
   dashboardProductionMonthly: `
