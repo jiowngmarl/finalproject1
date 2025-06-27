@@ -11,10 +11,6 @@ const routes: Array<RouteRecordRaw> = [
     redirect: { name: "dashboard" },
   },
   {
-<<<<<<< HEAD
-    path: "/auth",
-    component: AuthLayout,
-=======
   path: '/auth',
   component: AuthLayout,
   children: [
@@ -32,7 +28,6 @@ const routes: Array<RouteRecordRaw> = [
     path: '/',
     component: AppLayout,
     redirect: { name: 'dashboard' },
->>>>>>> main
     children: [
       {
         path: "login",
@@ -354,8 +349,4 @@ const router = createRouter({
   routes,
 });
 
-<<<<<<< HEAD
-export default router;
-=======
 export default router
->>>>>>> main
