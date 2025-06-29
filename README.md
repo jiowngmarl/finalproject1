@@ -38,7 +38,7 @@
 | **기타 라이브러리** | html2pdf, xlsx (SheetJS), Multer |
 | **협업 툴** | JANDI, discord |
 | **개발 도구** | GitHub, visual studio, mobaxterm |
-| **배포** | 로컬 개발 환경 ( + PM2), GitHub Action을 이용하여 실시간으로 저장소 운영 |
+| **배포** | 로컬 개발 환경 (ngnix + PM2), GitHub Action을 이용하여 실시간으로 저장소 운영 |
 
 ---
 
